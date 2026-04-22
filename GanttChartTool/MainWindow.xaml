@@ -56,7 +56,7 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" IsReadOnly="True" Width="30"/>
                 
-                <DataGridTemplateColumn Header="タスク名" Width="150">
+                <DataGridTemplateColumn Header="タスク名" Width="140">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Name}" Margin="{Binding IndentMargin}" VerticalAlignment="Center">
@@ -67,21 +67,16 @@
                     <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="{Binding IndentMargin}"/></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTextColumn Header="担当者" Binding="{Binding Assignee, UpdateSourceTrigger=PropertyChanged}" Width="70"/>
+                <DataGridTextColumn Header="担当者" Binding="{Binding Assignee, UpdateSourceTrigger=PropertyChanged}" Width="60"/>
 
-                <DataGridTemplateColumn Header="バー色" Width="70">
+                <DataGridTemplateColumn Header="色" Width="55">
                     <DataGridTemplateColumn.CellTemplate><DataTemplate><ComboBox ItemsSource="{Binding DataContext.AvailableBarColors, RelativeSource={RelativeSource AncestorType=DataGrid}}" SelectedItem="{Binding BarColorName, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent"/></DataTemplate></DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-                
-                <DataGridTemplateColumn Header="線の色" Width="70">
-                    <DataGridTemplateColumn.CellTemplate><DataTemplate><ComboBox ItemsSource="{Binding DataContext.AvailableLineColors, RelativeSource={RelativeSource AncestorType=DataGrid}}" SelectedItem="{Binding LineColorName, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent"/></DataTemplate></DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 
                 <DataGridTextColumn Header="%" Binding="{Binding Progress, UpdateSourceTrigger=PropertyChanged}" Width="35"/>
                 <DataGridTextColumn Header="営業日" Binding="{Binding WorkDays, UpdateSourceTrigger=LostFocus}" Width="45"/>
-                <DataGridTextColumn Header="残り" Binding="{Binding RemainingWorkDays, Mode=OneWay}" Width="40" IsReadOnly="True" Foreground="DimGray"/>
                 
-                <DataGridTemplateColumn Header="開始" Width="90">
+                <DataGridTemplateColumn Header="開始" Width="85">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock VerticalAlignment="Center">
@@ -89,9 +84,7 @@
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Text" Value="{Binding Start, StringFormat=MM/dd}"/>
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
-                                                <Setter Property="Text" Value="{Binding Start, StringFormat='MM/dd HH:mm'}"/>
-                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding Start, StringFormat='MM/dd HH:mm'}"/></DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </TextBlock.Style>
@@ -99,24 +92,11 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate>
-                            <TextBox>
-                                <TextBox.Style>
-                                    <Style TargetType="TextBox">
-                                        <Setter Property="Text" Value="{Binding Start, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
-                                                <Setter Property="Text" Value="{Binding Start, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBox.Style>
-                            </TextBox>
-                        </DataTemplate>
+                        <DataTemplate><TextBox Text="{Binding Start, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding Start, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTemplateColumn Header="終了" Width="90">
+                <DataGridTemplateColumn Header="終了" Width="85">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock VerticalAlignment="Center">
@@ -124,9 +104,7 @@
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Text" Value="{Binding End, StringFormat=MM/dd}"/>
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
-                                                <Setter Property="Text" Value="{Binding End, StringFormat='MM/dd HH:mm'}"/>
-                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding End, StringFormat='MM/dd HH:mm'}"/></DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </TextBlock.Style>
@@ -134,26 +112,13 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate>
-                            <TextBox>
-                                <TextBox.Style>
-                                    <Style TargetType="TextBox">
-                                        <Setter Property="Text" Value="{Binding End, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
-                                                <Setter Property="Text" Value="{Binding End, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBox.Style>
-                            </TextBox>
-                        </DataTemplate>
+                        <DataTemplate><TextBox Text="{Binding End, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding End, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTextColumn Header="後作業名" Binding="{Binding SubTaskName, UpdateSourceTrigger=PropertyChanged}" Width="100"/>
+                <DataGridTextColumn Header="後作業名" Binding="{Binding SubTaskName, UpdateSourceTrigger=PropertyChanged}" Width="80"/>
 
-                <DataGridTemplateColumn Header="後開始" Width="90">
+                <DataGridTemplateColumn Header="後開始" Width="85">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock VerticalAlignment="Center">
@@ -161,9 +126,7 @@
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Text" Value="{Binding SubTaskStart, StringFormat=MM/dd, TargetNullValue=''}"/>
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
-                                                <Setter Property="Text" Value="{Binding SubTaskStart, StringFormat='MM/dd HH:mm', TargetNullValue=''}"/>
-                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding SubTaskStart, StringFormat='MM/dd HH:mm', TargetNullValue=''}"/></DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </TextBlock.Style>
@@ -171,24 +134,11 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate>
-                            <TextBox>
-                                <TextBox.Style>
-                                    <Style TargetType="TextBox">
-                                        <Setter Property="Text" Value="{Binding SubTaskStart, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
-                                                <Setter Property="Text" Value="{Binding SubTaskStart, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBox.Style>
-                            </TextBox>
-                        </DataTemplate>
+                        <DataTemplate><TextBox Text="{Binding SubTaskStart, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding SubTaskStart, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTemplateColumn Header="後終了" Width="90">
+                <DataGridTemplateColumn Header="後終了" Width="85">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock VerticalAlignment="Center">
@@ -196,9 +146,7 @@
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Text" Value="{Binding SubTaskEnd, StringFormat=MM/dd, TargetNullValue=''}"/>
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
-                                                <Setter Property="Text" Value="{Binding SubTaskEnd, StringFormat='MM/dd HH:mm', TargetNullValue=''}"/>
-                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding SubTaskEnd, StringFormat='MM/dd HH:mm', TargetNullValue=''}"/></DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </TextBlock.Style>
@@ -206,30 +154,13 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate>
-                            <TextBox>
-                                <TextBox.Style>
-                                    <Style TargetType="TextBox">
-                                        <Setter Property="Text" Value="{Binding SubTaskEnd, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
-                                                <Setter Property="Text" Value="{Binding SubTaskEnd, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBox.Style>
-                            </TextBox>
-                        </DataTemplate>
+                        <DataTemplate><TextBox Text="{Binding SubTaskEnd, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding SubTaskEnd, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTemplateColumn Header="後バー色" Width="70">
+                <DataGridTemplateColumn Header="後色" Width="55">
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <ComboBox ItemsSource="{Binding DataContext.AvailableBarColors, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
-                                      SelectedItem="{Binding SubTaskBarColorName, UpdateSourceTrigger=PropertyChanged}" 
-                                      BorderThickness="0" Background="Transparent"/>
-                        </DataTemplate>
+                        <DataTemplate><ComboBox ItemsSource="{Binding DataContext.AvailableBarColors, RelativeSource={RelativeSource AncestorType=DataGrid}}" SelectedItem="{Binding SubTaskBarColorName, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent"/></DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
@@ -246,16 +177,19 @@
                     <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Canvas.Left" Value="{Binding Left}"/></Style></ItemsControl.ItemContainerStyle>
                     <ItemsControl.ItemTemplate><DataTemplate><Border Width="40" Background="{Binding BackgroundColor}" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}"/></DataTemplate></ItemsControl.ItemTemplate>
                 </ItemsControl>
+                
                 <Canvas Width="{Binding DataContext.ChartWidth, ElementName=RootWindow}" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}" IsHitTestVisible="False">
                     <Rectangle Width="{Binding DataContext.ChartWidth, ElementName=RootWindow}" Height="40" Fill="LightYellow" Opacity="0.8" Canvas.Top="{Binding DataGridSelectedTask.RowTop}">
                         <Rectangle.Style><Style TargetType="Rectangle"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding DataGridSelectedTask}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Rectangle.Style>
                     </Rectangle>
                 </Canvas>
+
                 <ItemsControl ItemsSource="{Binding GridDays}">
                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas Width="{Binding DataContext.ChartWidth, ElementName=RootWindow}" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}" IsHitTestVisible="False"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Canvas.Left" Value="{Binding Left}"/></Style></ItemsControl.ItemContainerStyle>
                     <ItemsControl.ItemTemplate><DataTemplate><Grid Width="40"><Rectangle Width="1" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}" Fill="#DDDDDD" HorizontalAlignment="Left"/><Border Height="40" VerticalAlignment="Top" BorderBrush="#DDDDDD" BorderThickness="0,0,0,1"><TextBlock Text="{Binding DayText}" FontSize="11" Foreground="Gray" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border></Grid></DataTemplate></ItemsControl.ItemTemplate>
                 </ItemsControl>
+
                 <ItemsControl ItemsSource="{Binding DependencyLines}">
                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas Width="{Binding DataContext.ChartWidth, ElementName=RootWindow}" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}" IsHitTestVisible="False"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate><DataTemplate><Path Stroke="{Binding LineBrush}" StrokeThickness="2" Data="{Binding PathData}"/></DataTemplate></ItemsControl.ItemTemplate>
@@ -275,7 +209,7 @@
                                     <Border.Effect><DropShadowEffect BlurRadius="3" ShadowDepth="1" Opacity="0.2"/></Border.Effect>
                                     <Grid>
                                         <Rectangle Fill="#50000000" Width="{Binding ProgressWidth}" HorizontalAlignment="Left"/>
-                                        <TextBlock Text="{Binding Name}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="11">
+                                        <TextBlock Text="{Binding Name}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="11" IsHitTestVisible="False">
                                             <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding IsGroup}" Value="True"><Setter Property="Visibility" Value="Hidden"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                                         </TextBlock>
                                         <Border Width="8" HorizontalAlignment="Left" Background="Transparent" Cursor="SizeWE" MouseLeftButtonDown="TaskBarResizeLeft_MouseLeftButtonDown" MouseMove="TaskBar_MouseMove" MouseLeftButtonUp="TaskBar_MouseLeftButtonUp"/>
@@ -283,18 +217,12 @@
                                     </Grid>
                                 </Border>
 
-                                <Border Canvas.Left="{Binding SubTaskLeft}" Canvas.Top="{Binding Top}" Width="{Binding SubTaskWidth}" Height="{Binding BarHeight}" Background="{Binding SubTaskBarColor}" Visibility="{Binding SubTaskVisibility}" Opacity="0.7" CornerRadius="2" BorderBrush="White" BorderThickness="1,0,1,0">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsGroup}" Value="True">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
+                                <Border Canvas.Left="{Binding SubTaskLeft}" Canvas.Top="{Binding Top}" Width="{Binding SubTaskWidth}" Height="{Binding BarHeight}" Background="{Binding SubTaskBarColor}" Visibility="{Binding SubTaskVisibility}" Opacity="0.8" CornerRadius="2" BorderBrush="White" BorderThickness="1,0,1,0" Cursor="SizeAll" ClipToBounds="True" MouseLeftButtonDown="SubTaskBar_MouseLeftButtonDown" MouseMove="SubTaskBar_MouseMove" MouseLeftButtonUp="SubTaskBar_MouseLeftButtonUp">
+                                    <Border.Style><Style TargetType="Border"><Style.Triggers><DataTrigger Binding="{Binding IsGroup}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Border.Style>
                                     <Grid>
-                                        <TextBlock Text="{Binding SubTaskName}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" FontWeight="Normal" Opacity="0.9"/>
+                                        <TextBlock Text="{Binding SubTaskName}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" FontWeight="Normal" Opacity="0.9" IsHitTestVisible="False"/>
+                                        <Border Width="8" HorizontalAlignment="Left" Background="Transparent" Cursor="SizeWE" MouseLeftButtonDown="SubTaskBarResizeLeft_MouseLeftButtonDown" MouseMove="SubTaskBar_MouseMove" MouseLeftButtonUp="SubTaskBar_MouseLeftButtonUp"/>
+                                        <Border Width="8" HorizontalAlignment="Right" Background="Transparent" Cursor="SizeWE" MouseLeftButtonDown="SubTaskBarResizeRight_MouseLeftButtonDown" MouseMove="SubTaskBar_MouseMove" MouseLeftButtonUp="SubTaskBar_MouseLeftButtonUp"/>
                                     </Grid>
                                 </Border>
                             </Canvas>
@@ -309,6 +237,7 @@
                         <Path.Effect><DropShadowEffect BlurRadius="3" ShadowDepth="0" Color="Red" Opacity="0.4"/></Path.Effect>
                     </Path>
                 </Canvas>
+                
                 <ItemsControl ItemsSource="{Binding Notes}">
                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas Width="{Binding DataContext.ChartWidth, ElementName=RootWindow}" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Canvas.Left" Value="{Binding X}"/><Setter Property="Canvas.Top" Value="{Binding Y}"/></Style></ItemsControl.ItemContainerStyle>
@@ -316,6 +245,7 @@
                 </ItemsControl>
             </Grid>
         </ScrollViewer>
+
         <Border Grid.Row="1" Grid.Column="2" HorizontalAlignment="Right" Width="280" Background="#FFFFFF" BorderBrush="#DDDDDD" BorderThickness="1,0,0,0">
             <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding MemoTask}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Border.Style>
             <Border.Effect><DropShadowEffect BlurRadius="10" ShadowDepth="-2" Opacity="0.1"/></Border.Effect>

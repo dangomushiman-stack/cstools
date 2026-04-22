@@ -15,6 +15,12 @@ namespace GanttChartTool
         private bool _isDraggingNote = false;
         private bool _isResizingNote = false;
         
+        // --- 追加：クラスの先頭付近の変数宣言に追加 ---
+        private bool _isDraggingSubTask = false;
+        private bool _isResizingSubTaskLeft = false;
+        private bool _isResizingSubTaskRight = false;
+        private DateTime? _origSubTaskStart, _origSubTaskEnd;
+
         private Point _dragStartPos;
         private object? _dragTarget = null;
         private DateTime _origStart, _origEnd;
@@ -269,5 +275,125 @@ namespace GanttChartTool
             }
             return child;
         }
+
+
+        // --- 追加：任意の場所に以下のメソッド群を追加 ---
+        private void SubTaskBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is FrameworkElement el && el.DataContext is TaskItem task && task.SubTaskStart.HasValue && task.SubTaskEnd.HasValue)
+            {
+                var vm = (MainViewModel)this.DataContext;
+                vm.OnTaskBarClicked(task);
+                if (!vm.IsLinkMode)
+                {
+                    _isDraggingSubTask = true;
+                    _dragTarget = task;
+                    _dragStartPos = e.GetPosition(null);
+                    _origSubTaskStart = task.SubTaskStart;
+                    _origSubTaskEnd = task.SubTaskEnd;
+
+                    vm.SuspendUpdates = true;
+                    el.CaptureMouse();
+                    e.Handled = true;
+                }
+            }
+        }
+
+        private void SubTaskBarResizeLeft_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is FrameworkElement el && el.DataContext is TaskItem task && task.SubTaskStart.HasValue && task.SubTaskEnd.HasValue)
+            {
+                var vm = (MainViewModel)this.DataContext;
+                vm.OnTaskBarClicked(task);
+                if (!vm.IsLinkMode)
+                {
+                    _isResizingSubTaskLeft = true;
+                    _dragTarget = task;
+                    _dragStartPos = e.GetPosition(null);
+                    _origSubTaskStart = task.SubTaskStart;
+                    _origSubTaskEnd = task.SubTaskEnd;
+
+                    vm.SuspendUpdates = true;
+                    el.CaptureMouse();
+                    e.Handled = true;
+                }
+            }
+        }
+
+        private void SubTaskBarResizeRight_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is FrameworkElement el && el.DataContext is TaskItem task && task.SubTaskStart.HasValue && task.SubTaskEnd.HasValue)
+            {
+                var vm = (MainViewModel)this.DataContext;
+                vm.OnTaskBarClicked(task);
+                if (!vm.IsLinkMode)
+                {
+                    _isResizingSubTaskRight = true;
+                    _dragTarget = task;
+                    _dragStartPos = e.GetPosition(null);
+                    _origSubTaskStart = task.SubTaskStart;
+                    _origSubTaskEnd = task.SubTaskEnd;
+
+                    vm.SuspendUpdates = true;
+                    el.CaptureMouse();
+                    e.Handled = true;
+                }
+            }
+        }
+
+        private void SubTaskBar_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (_dragTarget is TaskItem task && this.DataContext is MainViewModel vm && _origSubTaskStart.HasValue && _origSubTaskEnd.HasValue)
+            {
+                if (_isDraggingSubTask || _isResizingSubTaskLeft || _isResizingSubTaskRight)
+                {
+                    int units = (int)Math.Round((e.GetPosition(null).X - _dragStartPos.X) / GanttSettings.DayWidth);
+
+                    if (_isDraggingSubTask)
+                    {
+                        if (vm.IsHourlyMode)
+                        {
+                            task.SubTaskStart = _origSubTaskStart.Value.AddHours(units);
+                            task.SubTaskEnd = _origSubTaskEnd.Value.AddHours(units);
+                        }
+                        else
+                        {
+                            task.SubTaskStart = _origSubTaskStart.Value.AddDays(units);
+                            task.SubTaskEnd = _origSubTaskEnd.Value.AddDays(units);
+                        }
+                    }
+                    else if (_isResizingSubTaskLeft)
+                    {
+                        DateTime newStart = vm.IsHourlyMode ? _origSubTaskStart.Value.AddHours(units) : _origSubTaskStart.Value.AddDays(units);
+                        if (newStart < task.SubTaskEnd.Value) task.SubTaskStart = newStart;
+                    }
+                    else if (_isResizingSubTaskRight)
+                    {
+                        DateTime newEnd = vm.IsHourlyMode ? _origSubTaskEnd.Value.AddHours(units) : _origSubTaskEnd.Value.AddDays(units);
+                        if (newEnd > task.SubTaskStart.Value) task.SubTaskEnd = newEnd;
+                    }
+                }
+            }
+        }
+
+        private void SubTaskBar_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (_isDraggingSubTask || _isResizingSubTaskLeft || _isResizingSubTaskRight)
+            {
+                _isDraggingSubTask = false;
+                _isResizingSubTaskLeft = false;
+                _isResizingSubTaskRight = false;
+
+                ((FrameworkElement)sender).ReleaseMouseCapture();
+
+                if (this.DataContext is MainViewModel vm)
+                {
+                    vm.SuspendUpdates = false;
+                    vm.UpdateAll();
+                }
+            }
+        }
+
+
     }
 }
