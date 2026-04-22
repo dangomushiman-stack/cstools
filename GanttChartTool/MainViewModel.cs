@@ -256,16 +256,42 @@ namespace GanttChartTool
         [JsonIgnore]
         public Visibility SubTaskVisibility => (SubTaskStart != null && SubTaskEnd != null) ? Visibility.Visible : Visibility.Collapsed;
 
-        // 既存の RefreshDisplay を更新
+
+        // --- TaskItemクラス内に追加 ---
+
+        private string _subTaskBarColorName = "DimGray"; // デフォルト色
+        public string SubTaskBarColorName 
+        { 
+            get => _subTaskBarColorName; 
+            set 
+            { 
+                _subTaskBarColorName = value; 
+                OnPropertyChanged(); 
+                OnPropertyChanged(nameof(SubTaskBarColor)); 
+            } 
+        }
+
+        [JsonIgnore]
+        public Brush SubTaskBarColor 
+        {
+            get
+            {
+                try { return (Brush)new BrushConverter().ConvertFromString(SubTaskBarColorName)!; }
+                catch { return Brushes.DimGray; }
+            }
+        }
+
+
+        
+        // RefreshDisplay メソッドを更新（重複に注意してください）
         public void RefreshDisplay() 
         { 
             OnPropertyChanged(nameof(Left)); 
             OnPropertyChanged(nameof(Width)); 
-            // --- 追加分 ---
             OnPropertyChanged(nameof(SubTaskLeft));
             OnPropertyChanged(nameof(SubTaskWidth));
             OnPropertyChanged(nameof(SubTaskVisibility));
-            // ------------
+            OnPropertyChanged(nameof(SubTaskBarColor)); // 追加
             OnPropertyChanged(nameof(Top)); 
             OnPropertyChanged(nameof(RowTop));
             OnPropertyChanged(nameof(GhostLeft));
@@ -273,7 +299,6 @@ namespace GanttChartTool
             OnPropertyChanged(nameof(WorkDays));
             OnPropertyChanged(nameof(RemainingWorkDays));
         }
-
 
     }
 

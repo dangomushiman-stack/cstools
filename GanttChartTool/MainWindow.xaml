@@ -72,6 +72,7 @@
                 <DataGridTemplateColumn Header="バー色" Width="70">
                     <DataGridTemplateColumn.CellTemplate><DataTemplate><ComboBox ItemsSource="{Binding DataContext.AvailableBarColors, RelativeSource={RelativeSource AncestorType=DataGrid}}" SelectedItem="{Binding BarColorName, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent"/></DataTemplate></DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
+                
                 <DataGridTemplateColumn Header="線の色" Width="70">
                     <DataGridTemplateColumn.CellTemplate><DataTemplate><ComboBox ItemsSource="{Binding DataContext.AvailableLineColors, RelativeSource={RelativeSource AncestorType=DataGrid}}" SelectedItem="{Binding LineColorName, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent"/></DataTemplate></DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -222,6 +223,16 @@
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
+                <DataGridTemplateColumn Header="後バー色" Width="70">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ComboBox ItemsSource="{Binding DataContext.AvailableBarColors, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                      SelectedItem="{Binding SubTaskBarColorName, UpdateSourceTrigger=PropertyChanged}" 
+                                      BorderThickness="0" Background="Transparent"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
                 <DataGridTextColumn Header="先行" Binding="{Binding PredecessorId, UpdateSourceTrigger=PropertyChanged}" Width="40"/>
             </DataGrid.Columns>
         </DataGrid>
@@ -272,7 +283,7 @@
                                     </Grid>
                                 </Border>
 
-                                <Border Canvas.Left="{Binding SubTaskLeft}" Canvas.Top="{Binding Top}" Width="{Binding SubTaskWidth}" Height="{Binding BarHeight}" Background="{Binding BarColor}" Visibility="{Binding SubTaskVisibility}" Opacity="0.6" CornerRadius="2" BorderBrush="White" BorderThickness="1,0,1,0">
+                                <Border Canvas.Left="{Binding SubTaskLeft}" Canvas.Top="{Binding Top}" Width="{Binding SubTaskWidth}" Height="{Binding BarHeight}" Background="{Binding SubTaskBarColor}" Visibility="{Binding SubTaskVisibility}" Opacity="0.7" CornerRadius="2" BorderBrush="White" BorderThickness="1,0,1,0">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Style.Triggers>
