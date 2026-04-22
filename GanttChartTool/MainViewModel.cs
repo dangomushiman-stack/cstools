@@ -237,10 +237,35 @@ namespace GanttChartTool
         [JsonIgnore] public double RowTop => 40 + (RowIndex * GanttSettings.RowHeight);
         [JsonIgnore] public double ProgressWidth => Width * (Progress / 100.0);
 
+
+
+        // --- TaskItemクラス内に追加 ---
+
+        [JsonIgnore]
+        public double SubTaskLeft => (SubTaskStart == null || _getProjectStart == null) ? 0 : 
+            ((_getIsHourlyMode?.Invoke() ?? false) 
+                ? (SubTaskStart.Value - _getProjectStart()).TotalHours 
+                : (SubTaskStart.Value - _getProjectStart()).TotalDays) * GanttSettings.DayWidth;
+
+        [JsonIgnore]
+        public double SubTaskWidth => (SubTaskStart == null || SubTaskEnd == null) ? 0 : 
+            Math.Max(0, ((_getIsHourlyMode?.Invoke() ?? false) 
+                ? (SubTaskEnd.Value - SubTaskStart.Value).TotalHours 
+                : (SubTaskEnd.Value - SubTaskStart.Value).TotalDays) * GanttSettings.DayWidth);
+
+        [JsonIgnore]
+        public Visibility SubTaskVisibility => (SubTaskStart != null && SubTaskEnd != null) ? Visibility.Visible : Visibility.Collapsed;
+
+        // 既存の RefreshDisplay を更新
         public void RefreshDisplay() 
         { 
             OnPropertyChanged(nameof(Left)); 
             OnPropertyChanged(nameof(Width)); 
+            // --- 追加分 ---
+            OnPropertyChanged(nameof(SubTaskLeft));
+            OnPropertyChanged(nameof(SubTaskWidth));
+            OnPropertyChanged(nameof(SubTaskVisibility));
+            // ------------
             OnPropertyChanged(nameof(Top)); 
             OnPropertyChanged(nameof(RowTop));
             OnPropertyChanged(nameof(GhostLeft));
@@ -248,6 +273,8 @@ namespace GanttChartTool
             OnPropertyChanged(nameof(WorkDays));
             OnPropertyChanged(nameof(RemainingWorkDays));
         }
+
+
     }
 
     public class DependencyLine { public string PathData { get; set; } = ""; public Brush LineBrush { get; set; } = Brushes.DarkOrange; }
