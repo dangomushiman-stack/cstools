@@ -10,7 +10,8 @@
         </Grid.RowDefinitions>
         
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="750"/> <ColumnDefinition Width="5"/>
+            <ColumnDefinition Width="750"/>
+            <ColumnDefinition Width="5"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
@@ -140,6 +141,78 @@
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
                                                 <Setter Property="Text" Value="{Binding End, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTextColumn Header="後作業名" Binding="{Binding SubTaskName, UpdateSourceTrigger=PropertyChanged}" Width="100"/>
+
+                <DataGridTemplateColumn Header="後開始" Width="90">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="{Binding SubTaskStart, StringFormat=MM/dd, TargetNullValue=''}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                                <Setter Property="Text" Value="{Binding SubTaskStart, StringFormat='MM/dd HH:mm', TargetNullValue=''}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <TextBox>
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox">
+                                        <Setter Property="Text" Value="{Binding SubTaskStart, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                                <Setter Property="Text" Value="{Binding SubTaskStart, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="後終了" Width="90">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="{Binding SubTaskEnd, StringFormat=MM/dd, TargetNullValue=''}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                                <Setter Property="Text" Value="{Binding SubTaskEnd, StringFormat='MM/dd HH:mm', TargetNullValue=''}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <TextBox>
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox">
+                                        <Setter Property="Text" Value="{Binding SubTaskEnd, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                                <Setter Property="Text" Value="{Binding SubTaskEnd, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>

@@ -122,24 +122,62 @@ namespace GanttChartTool
         private DateTime _end;
         public DateTime End { get => _end; set { _end = value; OnPropertyChanged(); OnPropertyChanged(nameof(Width)); OnPropertyChanged(nameof(ProgressWidth)); OnPropertyChanged(nameof(WorkDays)); OnPropertyChanged(nameof(RemainingWorkDays)); _onUpdate?.Invoke(); } }
         
-        [JsonIgnore]
-        public int WorkDays
-        {
-            get => GanttLogic.CalculateWorkDays(Start, End);
-            set { if (value >= 0) { End = GanttLogic.AddWorkDays(Start, value); OnPropertyChanged(); } }
+        // --- 追加：後作業（レビュー等）用のプロパティ ---
+
+        private string _subTaskName = "";
+        public string SubTaskName 
+        { 
+            get => _subTaskName; 
+            set { _subTaskName = value; OnPropertyChanged(); } 
         }
 
-        [JsonIgnore]
-        public int RemainingWorkDays
-        {
-            get
-            {
-                var today = DateTime.Today;
-                if (today >= End.Date) return 0;
-                if (today <= Start.Date) return WorkDays;
-                return GanttLogic.CalculateWorkDays(today, End);
-            }
+        // 任意項目のため DateTime? (Nullable) を使用
+        private DateTime? _subTaskStart;
+        public DateTime? SubTaskStart 
+        { 
+            get => _subTaskStart; 
+            set 
+            { 
+                _subTaskStart = value; 
+                OnPropertyChanged(); 
+                // 後でキャンバス上の描画を更新するために必要になります
+                _onUpdate?.Invoke(); 
+            } 
         }
+
+        private DateTime? _subTaskEnd;
+        public DateTime? SubTaskEnd 
+        { 
+            get => _subTaskEnd; 
+            set 
+            { 
+                _subTaskEnd = value; 
+                OnPropertyChanged(); 
+                // 後でキャンバス上の描画を更新するために必要になります
+                _onUpdate?.Invoke(); 
+            } 
+        }
+
+
+
+            [JsonIgnore]
+            public int WorkDays
+            {
+                get => GanttLogic.CalculateWorkDays(Start, End);
+                set { if (value >= 0) { End = GanttLogic.AddWorkDays(Start, value); OnPropertyChanged(); } }
+            }
+
+            [JsonIgnore]
+            public int RemainingWorkDays
+            {
+                get
+                {
+                    var today = DateTime.Today;
+                    if (today >= End.Date) return 0;
+                    if (today <= Start.Date) return WorkDays;
+                    return GanttLogic.CalculateWorkDays(today, End);
+                }
+            }
 
         private double _progress;
         public double Progress { get => _progress; set { _progress = Math.Max(0, Math.Min(100, value)); OnPropertyChanged(); OnPropertyChanged(nameof(ProgressWidth)); _onUpdate?.Invoke(); } }

@@ -17,3 +17,4 @@ D:\git_repo\cstool\GanttChartTool\GanttChartTool\obj\Debug\net8.0-windows\refint
 D:\git_repo\cstool\GanttChartTool\GanttChartTool\obj\Debug\net8.0-windows\GanttChartTool.pdb
 D:\git_repo\cstool\GanttChartTool\GanttChartTool\obj\Debug\net8.0-windows\GanttChartTool.genruntimeconfig.cache
 D:\git_repo\cstool\GanttChartTool\GanttChartTool\obj\Debug\net8.0-windows\ref\GanttChartTool.dll
+D:\git_repo\cstool\GanttChartTool\GanttChartTool\obj\Debug\net8.0-windows\GanttChartTool.sourcelink.json
