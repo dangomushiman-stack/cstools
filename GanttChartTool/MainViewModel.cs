@@ -145,6 +145,8 @@ namespace GanttChartTool
         public bool IsWorkDayAdjustmentEnabled { get; set; } = true;
         public bool IsHourlyMode { get; set; } = false;
         public long IntervalTicks { get; set; } = TimeSpan.FromDays(1).Ticks;
+        // ★新設：スナップ単位の設定を保存
+        public bool IsSnapToDay { get; set; } = false; 
     }
 
     public class TaskItem : ViewModelBase
@@ -288,7 +290,6 @@ namespace GanttChartTool
         public ObservableCollection<GridDayItem> GridDays { get; set; } = new();
         public ObservableCollection<DependencyLine> DependencyLines { get; set; } = new();
         
-        // ★ここで選択肢を自由に追加・編集できます
         public ObservableCollection<IntervalOption> IntervalOptions { get; } = new()
         {
             new IntervalOption { Name = "1時間", TimeSpan = TimeSpan.FromHours(1) },
@@ -296,8 +297,8 @@ namespace GanttChartTool
             new IntervalOption { Name = "6時間", TimeSpan = TimeSpan.FromHours(6) },
             new IntervalOption { Name = "半日", TimeSpan = TimeSpan.FromHours(12) },
             new IntervalOption { Name = "1日", TimeSpan = TimeSpan.FromDays(1) },
-            new IntervalOption { Name = "2日", TimeSpan = TimeSpan.FromDays(2) }, // ★追加
-            new IntervalOption { Name = "3日", TimeSpan = TimeSpan.FromDays(3) }, // ★追加
+            new IntervalOption { Name = "2日", TimeSpan = TimeSpan.FromDays(2) },
+            new IntervalOption { Name = "3日", TimeSpan = TimeSpan.FromDays(3) },
             new IntervalOption { Name = "1週間", TimeSpan = TimeSpan.FromDays(7) }
         };
 
@@ -316,6 +317,10 @@ namespace GanttChartTool
         }
 
         [JsonIgnore] public bool IsHourlyMode => SelectedInterval?.TimeSpan.TotalDays < 1;
+
+        // ★新設：スナップ単位の切り替え
+        private bool _isSnapToDay = false;
+        public bool IsSnapToDay { get => _isSnapToDay; set { _isSnapToDay = value; OnPropertyChanged(); } }
 
         private DateTime _projectStartDate = new DateTime(2026, 4, 1);
         public DateTime ProjectStartDate { get => _projectStartDate; set { _projectStartDate = value; OnPropertyChanged(); UpdateAll(); } }
@@ -375,7 +380,6 @@ namespace GanttChartTool
 
         public MainViewModel() 
         { 
-            // 初期状態を「1日（インデックス4）」に設定
             _selectedInterval = IntervalOptions[4]; 
             UpdateAll(); 
         }
@@ -552,7 +556,8 @@ namespace GanttChartTool
                 IsProgressLineVisible = this.IsProgressLineVisible,
                 IsWorkDayAdjustmentEnabled = this.IsWorkDayAdjustmentEnabled,
                 IsHourlyMode = this.IsHourlyMode,
-                IntervalTicks = this.SelectedInterval.TimeSpan.Ticks 
+                IntervalTicks = this.SelectedInterval.TimeSpan.Ticks,
+                IsSnapToDay = this.IsSnapToDay // ★保存
             };
             File.WriteAllText(filePath, JsonSerializer.Serialize(saveData, new JsonSerializerOptions { WriteIndented = true }));
             CurrentFilePath = filePath;
@@ -573,6 +578,7 @@ namespace GanttChartTool
                     DisplayDays = data.DisplayDays;
                     IsProgressLineVisible = data.IsProgressLineVisible;
                     IsWorkDayAdjustmentEnabled = data.IsWorkDayAdjustmentEnabled;
+                    IsSnapToDay = data.IsSnapToDay; // ★復元
                     
                     if (data.IntervalTicks > 0)
                     {

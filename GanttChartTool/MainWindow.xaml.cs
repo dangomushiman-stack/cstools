@@ -33,7 +33,6 @@ namespace GanttChartTool
 
         private void GanttScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e) { if (!_isSync && _dgScroll != null) { _isSync = true; _dgScroll.ScrollToVerticalOffset(e.VerticalOffset); _isSync = false; } }
 
-        // --- バーのマウスイベント ---
         private void Bar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (sender is FrameworkElement el && el.DataContext is TaskItem task)
@@ -109,11 +108,19 @@ namespace GanttChartTool
             {
                 if (bar.IsDragging || _isResizingLeft || _isResizingRight)
                 {
-                    int units = (int)Math.Round((e.GetPosition(null).X - _dragStartPos.X) / GanttSettings.DayWidth);
+                    // 1. 移動ピクセルを「何マス分か」に変換
+                    double dx = e.GetPosition(null).X - _dragStartPos.X;
+                    double intervals = dx / GanttSettings.DayWidth;
                     
-                    // ★変更：移動したマス数 × 選んでいるインターバル時間 で移動量を計算
-                    TimeSpan diff = TimeSpan.FromTicks(vm.SelectedInterval.TimeSpan.Ticks * units);
+                    // 2. マス数を「論理的な時間（TimeSpan）」に変換
+                    TimeSpan movedTime = TimeSpan.FromTicks((long)(vm.SelectedInterval.TimeSpan.Ticks * intervals));
+                    
+                    // 3. 設定された「スナップ単位」に合わせて時間を丸める
+                    TimeSpan snapInterval = vm.IsSnapToDay ? TimeSpan.FromDays(1) : vm.SelectedInterval.TimeSpan;
+                    long roundedTicks = (long)Math.Round((double)movedTime.Ticks / snapInterval.Ticks) * snapInterval.Ticks;
+                    TimeSpan diff = TimeSpan.FromTicks(roundedTicks);
 
+                    // 4. 丸められた時間を元の位置に足し合わせる
                     if (bar.IsDragging && !_isResizingLeft && !_isResizingRight)
                     {
                         bar.Start = bar.OriginalStart.Value.Add(diff);
