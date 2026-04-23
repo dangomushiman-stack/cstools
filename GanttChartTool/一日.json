@@ -1,88 +1,196 @@
 {
   "Tasks": [
     {
-      "Id": 1,
+      "Id": "1",
       "Name": "\u7761\u7720",
+      "Assignee": "",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 0,
-      "Start": "2026-04-01T00:00:00",
-      "End": "2026-04-01T07:00:00",
+      "MainBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": "2026-04-01T00:00:00",
+        "End": "2026-04-01T07:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "",
       "RowIndex": 0,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "DimGray"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 2,
+      "Id": "2",
       "Name": "\u671D\u98EF",
+      "Assignee": "",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 0,
-      "Start": "2026-04-01T07:00:00",
-      "End": "2026-04-01T08:00:00",
+      "MainBar": {
+        "Name": "",
+        "ColorName": "Goldenrod",
+        "Start": "2026-04-01T07:00:00",
+        "End": "2026-04-01T08:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "",
       "RowIndex": 1,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "Goldenrod"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 6,
+      "Id": "6",
       "Name": "\u30B2\u30FC\u30E0",
+      "Assignee": "",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 0,
-      "Start": "2026-04-01T08:00:00",
-      "End": "2026-04-01T09:00:00",
+      "MainBar": {
+        "Name": "",
+        "ColorName": "Goldenrod",
+        "Start": "2026-04-01T08:00:00",
+        "End": "2026-04-01T09:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "",
       "RowIndex": 2,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "SteelBlue"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 3,
-      "Name": "\u81EA\u8EE2\u8ECA",
+      "Id": "6bec",
+      "Name": "\u691C\u8A3A\u96FB\u8A71",
+      "Assignee": "",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 0,
-      "Start": "2026-04-01T16:00:00",
-      "End": "2026-04-01T17:00:00",
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-01T09:00:00",
+        "End": "2026-04-01T10:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "",
       "RowIndex": 3,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "SteelBlue"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 4,
-      "Name": "\u98EF\u4F5C",
+      "Id": "56fe",
+      "Name": "\u4F1A\u793E\u96FB\u8A71",
+      "Assignee": "",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 0,
-      "Start": "2026-04-01T22:00:00",
-      "End": "2026-04-01T23:00:00",
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-01T10:00:00",
+        "End": "2026-04-01T11:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "",
       "RowIndex": 4,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "SteelBlue"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 5,
-      "Name": "\u7761\u7720",
+      "Id": "3",
+      "Name": "\u81EA\u8EE2\u8ECA",
+      "Assignee": "",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 0,
-      "Start": "2026-04-02T00:00:00",
-      "End": "2026-04-02T07:00:00",
+      "MainBar": {
+        "Name": "",
+        "ColorName": "Goldenrod",
+        "Start": "2026-04-01T16:00:00",
+        "End": "2026-04-01T17:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "",
       "RowIndex": 5,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "DimGray"
+      "LineColorName": "DarkOrange"
+    },
+    {
+      "Id": "4",
+      "Name": "\u98EF\u4F5C",
+      "Assignee": "",
+      "Memo": "",
+      "IsGroup": false,
+      "IndentLevel": 0,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "Goldenrod",
+        "Start": "2026-04-01T22:00:00",
+        "End": "2026-04-01T23:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
+      "Progress": 0,
+      "PredecessorId": "",
+      "RowIndex": 6,
+      "LineColorName": "DarkOrange"
+    },
+    {
+      "Id": "5",
+      "Name": "\u7761\u7720",
+      "Assignee": "",
+      "Memo": "",
+      "IsGroup": false,
+      "IndentLevel": 0,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": "2026-04-02T00:00:00",
+        "End": "2026-04-02T07:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
+      "Progress": 0,
+      "PredecessorId": "",
+      "RowIndex": 7,
+      "LineColorName": "DarkOrange"
     }
   ],
   "Notes": [],

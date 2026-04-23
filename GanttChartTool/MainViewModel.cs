@@ -54,6 +54,16 @@ namespace GanttChartTool
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 
+    public class StringConverter : JsonConverter<string>
+    {
+        public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.Number) return reader.TryGetInt32(out int i) ? i.ToString() : reader.GetDouble().ToString();
+            return reader.GetString() ?? "";
+        }
+        public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options) => writer.WriteStringValue(value);
+    }
+
     public class NoteItem : ViewModelBase
     {
         public NoteItem() { }
@@ -67,6 +77,57 @@ namespace GanttChartTool
         public double Width { get => _width; set { _width = value; OnPropertyChanged(); } }
         private double _height = 80;
         public double Height { get => _height; set { _height = value; OnPropertyChanged(); } }
+    }
+
+    public class BarItem : ViewModelBase
+    {
+        private DateTime? _start, _end, _origStart, _origEnd;
+        private string _name = "";
+        private string _colorName = "SteelBlue";
+        private bool _isDragging;
+
+        [JsonIgnore] public Func<DateTime>? GetProjectStart;
+        [JsonIgnore] public Func<bool>? GetIsHourlyMode;
+        [JsonIgnore] public Func<bool>? GetIsSelected; // ★親が選択中か知るための連絡網を追加
+        [JsonIgnore] public Action? OnChanged;
+
+        public string Name { get => _name; set { _name = value; OnPropertyChanged(); } }
+        public string ColorName { get => _colorName; set { _colorName = value; OnPropertyChanged(); OnPropertyChanged(nameof(Brush)); } }
+        
+        public DateTime? Start { get => _start; set { _start = value; OnPropertyChanged(); Refresh(); OnChanged?.Invoke(); } }
+        public DateTime? End { get => _end; set { _end = value; OnPropertyChanged(); Refresh(); OnChanged?.Invoke(); } }
+
+        [JsonIgnore] public bool IsDragging { get => _isDragging; set { _isDragging = value; OnPropertyChanged(); OnPropertyChanged(nameof(GhostVisibility)); } }
+        [JsonIgnore] public DateTime? OriginalStart { get => _origStart; set { _origStart = value; Refresh(); } }
+        [JsonIgnore] public DateTime? OriginalEnd { get => _origEnd; set { _origEnd = value; Refresh(); } }
+
+        // ★選択中なら強制的にオレンジ色（DarkOrange）にする
+        [JsonIgnore] public Brush Brush { get { if (GetIsSelected?.Invoke() == true) return Brushes.DarkOrange; try { return (Brush)new BrushConverter().ConvertFromString(ColorName)!; } catch { return Brushes.SteelBlue; } } }
+        
+        [JsonIgnore] public Visibility Visibility => (Start.HasValue && End.HasValue) ? Visibility.Visible : Visibility.Collapsed;
+        [JsonIgnore] public Visibility GhostVisibility => IsDragging ? Visibility.Visible : Visibility.Collapsed;
+
+        [JsonIgnore] public double Left => CalculateX(Start);
+        [JsonIgnore] public double Width => CalculateWidth(Start, End);
+        [JsonIgnore] public double GhostLeft => CalculateX(OriginalStart);
+        [JsonIgnore] public double GhostWidth => CalculateWidth(OriginalStart, OriginalEnd);
+
+        private double CalculateX(DateTime? dt) => (dt == null || GetProjectStart == null) ? 0 : 
+            ((GetIsHourlyMode?.Invoke() ?? false) ? (dt.Value - GetProjectStart()).TotalHours : (dt.Value - GetProjectStart()).TotalDays) * GanttSettings.DayWidth;
+
+        private double CalculateWidth(DateTime? s, DateTime? e) => (s == null || e == null) ? 0 : 
+            Math.Max(0, ((GetIsHourlyMode?.Invoke() ?? false) ? (e.Value - s.Value).TotalHours : (e.Value - s.Value).TotalDays) * GanttSettings.DayWidth);
+
+        public void Refresh() 
+        { 
+            OnPropertyChanged(nameof(Left)); OnPropertyChanged(nameof(Width)); 
+            OnPropertyChanged(nameof(GhostLeft)); OnPropertyChanged(nameof(GhostWidth)); 
+            OnPropertyChanged(nameof(Visibility)); OnPropertyChanged(nameof(GhostVisibility));
+            OnPropertyChanged(nameof(Brush)); // ★色が変わるかもしれないので通知
+        }
+
+        public void Snapshot() { OriginalStart = Start; OriginalEnd = End; IsDragging = true; }
+        public void Release() { IsDragging = false; }
     }
 
     public class ProjectSaveData
@@ -83,117 +144,96 @@ namespace GanttChartTool
     public class TaskItem : ViewModelBase
     {
         private Action? _onUpdate;
-        private Func<DateTime>? _getProjectStart;
-        private Func<bool>? _getIsHourlyMode;
-
         public TaskItem() { }
         public TaskItem(Action onUpdate, Func<DateTime> getProjectStart, Func<bool> getIsHourlyMode) 
         { 
-            _onUpdate = onUpdate; 
-            _getProjectStart = getProjectStart;
-            _getIsHourlyMode = getIsHourlyMode;
+            SetReferences(onUpdate, getProjectStart, getIsHourlyMode);
         }
 
         public void SetReferences(Action onUpdate, Func<DateTime> getProjectStart, Func<bool> getIsHourlyMode)
         {
             _onUpdate = onUpdate;
-            _getProjectStart = getProjectStart;
-            _getIsHourlyMode = getIsHourlyMode;
+            MainBar.GetProjectStart = SubBar.GetProjectStart = getProjectStart;
+            MainBar.GetIsHourlyMode = SubBar.GetIsHourlyMode = getIsHourlyMode;
+            MainBar.GetIsSelected = SubBar.GetIsSelected = () => IsSelected; // ★部品に連絡網を渡す
+            MainBar.OnChanged = SubBar.OnChanged = onUpdate;
         }
 
-        public int Id { get; set; }
-        private string _name = "";
+        [JsonConverter(typeof(StringConverter))]
+        public string Id { get => _id; set { _id = value; OnPropertyChanged(); } }
+        private string _id = "";
+        
         public string Name { get => _name; set { _name = value; OnPropertyChanged(); } }
+        private string _name = "";
         
-        // ★新規追加：担当者
-        private string _assignee = "";
         public string Assignee { get => _assignee; set { _assignee = value; OnPropertyChanged(); } }
+        private string _assignee = "";
 
-        private string _memo = "";
         public string Memo { get => _memo; set { _memo = value; OnPropertyChanged(); } }
+        private string _memo = "";
+        
+        public bool IsGroup { get => _isGroup; set { _isGroup = value; OnPropertyChanged(); OnPropertyChanged(nameof(BarOpacity)); OnPropertyChanged(nameof(Top)); } }
         private bool _isGroup;
-        public bool IsGroup { get => _isGroup; set { _isGroup = value; OnPropertyChanged(); OnPropertyChanged(nameof(BarColor)); OnPropertyChanged(nameof(BarHeight)); OnPropertyChanged(nameof(Top)); } }
-        private int _indentLevel;
+        
         public int IndentLevel { get => _indentLevel; set { _indentLevel = value; OnPropertyChanged(); OnPropertyChanged(nameof(IndentMargin)); _onUpdate?.Invoke(); } }
+        private int _indentLevel;
         
-        private DateTime _start;
-        public DateTime Start { get => _start; set { _start = value; OnPropertyChanged(); OnPropertyChanged(nameof(Left)); OnPropertyChanged(nameof(Width)); OnPropertyChanged(nameof(ProgressWidth)); OnPropertyChanged(nameof(WorkDays)); OnPropertyChanged(nameof(RemainingWorkDays)); _onUpdate?.Invoke(); } }
-        
-        private DateTime _end;
-        public DateTime End { get => _end; set { _end = value; OnPropertyChanged(); OnPropertyChanged(nameof(Width)); OnPropertyChanged(nameof(ProgressWidth)); OnPropertyChanged(nameof(WorkDays)); OnPropertyChanged(nameof(RemainingWorkDays)); _onUpdate?.Invoke(); } }
-        
-        // --- 追加：後作業（レビュー等）用のプロパティ ---
+        public BarItem MainBar { get; set; } = new BarItem { ColorName = "SteelBlue" };
+        public BarItem SubBar { get; set; } = new BarItem { ColorName = "DimGray" };
 
-        private string _subTaskName = "";
-        public string SubTaskName 
-        { 
-            get => _subTaskName; 
-            set { _subTaskName = value; OnPropertyChanged(); } 
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? ExtensionData { get; set; }
+
+        public void MigrateOldData()
+        {
+            if (ExtensionData == null) return;
+
+            if (ExtensionData.TryGetValue("Start", out var st) && st.ValueKind == JsonValueKind.String && DateTime.TryParse(st.GetString(), out var dt1)) MainBar.Start = dt1;
+            if (ExtensionData.TryGetValue("End", out var ed) && ed.ValueKind == JsonValueKind.String && DateTime.TryParse(ed.GetString(), out var dt2)) MainBar.End = dt2;
+            if (ExtensionData.TryGetValue("SubTaskStart", out var sst) && sst.ValueKind == JsonValueKind.String && DateTime.TryParse(sst.GetString(), out var dt3)) SubBar.Start = dt3;
+            if (ExtensionData.TryGetValue("SubTaskEnd", out var sed) && sed.ValueKind == JsonValueKind.String && DateTime.TryParse(sed.GetString(), out var dt4)) SubBar.End = dt4;
+            
+            if (ExtensionData.TryGetValue("BarColorName", out var bc) && bc.ValueKind == JsonValueKind.String) MainBar.ColorName = bc.GetString() ?? "SteelBlue";
+            if (ExtensionData.TryGetValue("SubTaskBarColorName", out var sbc) && sbc.ValueKind == JsonValueKind.String) SubBar.ColorName = sbc.GetString() ?? "DimGray";
+            if (ExtensionData.TryGetValue("SubTaskName", out var sn) && sn.ValueKind == JsonValueKind.String) SubBar.Name = sn.GetString() ?? "";
+
+            ExtensionData.Clear();
         }
 
-        // 任意項目のため DateTime? (Nullable) を使用
-        private DateTime? _subTaskStart;
-        public DateTime? SubTaskStart 
-        { 
-            get => _subTaskStart; 
-            set 
-            { 
-                _subTaskStart = value; 
-                OnPropertyChanged(); 
-                // 後でキャンバス上の描画を更新するために必要になります
-                _onUpdate?.Invoke(); 
-            } 
+        [JsonIgnore]
+        public int WorkDays
+        {
+            get => MainBar.Start.HasValue && MainBar.End.HasValue ? GanttLogic.CalculateWorkDays(MainBar.Start.Value, MainBar.End.Value) : 0;
+            set { if (MainBar.Start.HasValue && value >= 0) { MainBar.End = GanttLogic.AddWorkDays(MainBar.Start.Value, value); OnPropertyChanged(); OnPropertyChanged(nameof(RemainingWorkDays)); } }
         }
 
-        private DateTime? _subTaskEnd;
-        public DateTime? SubTaskEnd 
-        { 
-            get => _subTaskEnd; 
-            set 
-            { 
-                _subTaskEnd = value; 
-                OnPropertyChanged(); 
-                // 後でキャンバス上の描画を更新するために必要になります
-                _onUpdate?.Invoke(); 
-            } 
-        }
-
-
-
-            [JsonIgnore]
-            public int WorkDays
+        [JsonIgnore]
+        public int RemainingWorkDays
+        {
+            get
             {
-                get => GanttLogic.CalculateWorkDays(Start, End);
-                set { if (value >= 0) { End = GanttLogic.AddWorkDays(Start, value); OnPropertyChanged(); } }
+                var today = DateTime.Today;
+                if (!MainBar.Start.HasValue || !MainBar.End.HasValue) return 0;
+                if (today >= MainBar.End.Value.Date) return 0;
+                if (today <= MainBar.Start.Value.Date) return WorkDays;
+                return GanttLogic.CalculateWorkDays(today, MainBar.End.Value);
             }
-
-            [JsonIgnore]
-            public int RemainingWorkDays
-            {
-                get
-                {
-                    var today = DateTime.Today;
-                    if (today >= End.Date) return 0;
-                    if (today <= Start.Date) return WorkDays;
-                    return GanttLogic.CalculateWorkDays(today, End);
-                }
-            }
+        }
 
         private double _progress;
         public double Progress { get => _progress; set { _progress = Math.Max(0, Math.Min(100, value)); OnPropertyChanged(); OnPropertyChanged(nameof(ProgressWidth)); _onUpdate?.Invoke(); } }
         
         private string _predecessorId = "";
         public string PredecessorId { get => _predecessorId; set { _predecessorId = value; OnPropertyChanged(); _onUpdate?.Invoke(); } }
+        
         private int _rowIndex;
         public int RowIndex { get => _rowIndex; set { _rowIndex = value; OnPropertyChanged(); OnPropertyChanged(nameof(Top)); OnPropertyChanged(nameof(RowTop)); _onUpdate?.Invoke(); } }
         
         private string _lineColorName = "DarkOrange";
         public string LineColorName { get => _lineColorName; set { _lineColorName = value; OnPropertyChanged(); _onUpdate?.Invoke(); } }
-        
-        private string _barColorName = "SteelBlue";
-        public string BarColorName { get => _barColorName; set { _barColorName = value; OnPropertyChanged(); OnPropertyChanged(nameof(BarColor)); _onUpdate?.Invoke(); } }
 
-        [JsonIgnore] public bool IsSelected { get => _isSelected; set { _isSelected = value; OnPropertyChanged(); OnPropertyChanged(nameof(BarColor)); } }
+        // ★選択フラグが変わったら、自分の中のバーにも再描画（色の更新）を指示する
+        [JsonIgnore] public bool IsSelected { get => _isSelected; set { _isSelected = value; OnPropertyChanged(); MainBar.Refresh(); SubBar.Refresh(); } }
         private bool _isSelected;
         
         [JsonIgnore] public bool IsRowSelected { get => _isRowSelected; set { _isRowSelected = value; OnPropertyChanged(); } }
@@ -201,105 +241,28 @@ namespace GanttChartTool
 
         [JsonIgnore] public bool IsRelevant { get => _isRelevant; set { _isRelevant = value; OnPropertyChanged(); OnPropertyChanged(nameof(BarOpacity)); } }
         private bool _isRelevant = true;
-        [JsonIgnore] public double BarOpacity => IsRelevant ? 1.0 : 0.2;
+        
+        [JsonIgnore] public double BarOpacity => IsGroup ? 1.0 : (IsRelevant ? 0.8 : 0.2);
         [JsonIgnore] public Thickness IndentMargin => new Thickness(IndentLevel * 20, 0, 0, 0);
 
-        private bool _isDragging;
-        [JsonIgnore] public bool IsDragging { get => _isDragging; set { _isDragging = value; OnPropertyChanged(); } }
-
-        private DateTime _originalStart;
-        [JsonIgnore] public DateTime OriginalStart { get => _originalStart; set { _originalStart = value; OnPropertyChanged(); OnPropertyChanged(nameof(GhostLeft)); OnPropertyChanged(nameof(GhostWidth)); } }
-
-        private DateTime _originalEnd;
-        [JsonIgnore] public DateTime OriginalEnd { get => _originalEnd; set { _originalEnd = value; OnPropertyChanged(); OnPropertyChanged(nameof(GhostWidth)); } }
-
-        [JsonIgnore] 
-        public Brush BarColor 
-        {
-            get
-            {
-                if (IsSelected) return Brushes.DarkOrange;
-                if (IsGroup && BarColorName == "SteelBlue") return Brushes.DimGray;
-                try { return (Brush)new BrushConverter().ConvertFromString(BarColorName)!; }
-                catch { return Brushes.SteelBlue; }
-            }
-        }
-        
         [JsonIgnore] public double BarHeight => IsGroup ? 12 : 30;
-
-        [JsonIgnore] public double Left => ((_getIsHourlyMode?.Invoke() ?? false) ? (Start - (_getProjectStart?.Invoke() ?? DateTime.MinValue)).TotalHours : (Start - (_getProjectStart?.Invoke() ?? DateTime.MinValue)).TotalDays) * GanttSettings.DayWidth;
-        [JsonIgnore] public double Width => Math.Max(0, ((_getIsHourlyMode?.Invoke() ?? false) ? (End - Start).TotalHours : (End - Start).TotalDays) * GanttSettings.DayWidth);
-        
-        [JsonIgnore] public double GhostLeft => ((_getIsHourlyMode?.Invoke() ?? false) ? (OriginalStart - (_getProjectStart?.Invoke() ?? DateTime.MinValue)).TotalHours : (OriginalStart - (_getProjectStart?.Invoke() ?? DateTime.MinValue)).TotalDays) * GanttSettings.DayWidth;
-        [JsonIgnore] public double GhostWidth => Math.Max(0, ((_getIsHourlyMode?.Invoke() ?? false) ? (OriginalEnd - OriginalStart).TotalHours : (OriginalEnd - OriginalStart).TotalDays) * GanttSettings.DayWidth);
 
         [JsonIgnore] public double Top => 40 + (RowIndex * GanttSettings.RowHeight) + ((GanttSettings.RowHeight - BarHeight) / 2);
         [JsonIgnore] public double RowTop => 40 + (RowIndex * GanttSettings.RowHeight);
-        [JsonIgnore] public double ProgressWidth => Width * (Progress / 100.0);
+        [JsonIgnore] public double ProgressWidth => MainBar.Width * (Progress / 100.0);
 
+        [JsonIgnore] public DateTime? EffectiveEnd => SubBar.Visibility == Visibility.Visible ? SubBar.End : MainBar.End;
 
-
-        // --- TaskItemクラス内に追加 ---
-
-        [JsonIgnore]
-        public double SubTaskLeft => (SubTaskStart == null || _getProjectStart == null) ? 0 : 
-            ((_getIsHourlyMode?.Invoke() ?? false) 
-                ? (SubTaskStart.Value - _getProjectStart()).TotalHours 
-                : (SubTaskStart.Value - _getProjectStart()).TotalDays) * GanttSettings.DayWidth;
-
-        [JsonIgnore]
-        public double SubTaskWidth => (SubTaskStart == null || SubTaskEnd == null) ? 0 : 
-            Math.Max(0, ((_getIsHourlyMode?.Invoke() ?? false) 
-                ? (SubTaskEnd.Value - SubTaskStart.Value).TotalHours 
-                : (SubTaskEnd.Value - SubTaskStart.Value).TotalDays) * GanttSettings.DayWidth);
-
-        [JsonIgnore]
-        public Visibility SubTaskVisibility => (SubTaskStart != null && SubTaskEnd != null) ? Visibility.Visible : Visibility.Collapsed;
-
-
-        // --- TaskItemクラス内に追加 ---
-
-        private string _subTaskBarColorName = "DimGray"; // デフォルト色
-        public string SubTaskBarColorName 
-        { 
-            get => _subTaskBarColorName; 
-            set 
-            { 
-                _subTaskBarColorName = value; 
-                OnPropertyChanged(); 
-                OnPropertyChanged(nameof(SubTaskBarColor)); 
-            } 
-        }
-
-        [JsonIgnore]
-        public Brush SubTaskBarColor 
-        {
-            get
-            {
-                try { return (Brush)new BrushConverter().ConvertFromString(SubTaskBarColorName)!; }
-                catch { return Brushes.DimGray; }
-            }
-        }
-
-
-        
-        // RefreshDisplay メソッドを更新（重複に注意してください）
         public void RefreshDisplay() 
         { 
-            OnPropertyChanged(nameof(Left)); 
-            OnPropertyChanged(nameof(Width)); 
-            OnPropertyChanged(nameof(SubTaskLeft));
-            OnPropertyChanged(nameof(SubTaskWidth));
-            OnPropertyChanged(nameof(SubTaskVisibility));
-            OnPropertyChanged(nameof(SubTaskBarColor)); // 追加
+            MainBar.Refresh();
+            SubBar.Refresh();
             OnPropertyChanged(nameof(Top)); 
             OnPropertyChanged(nameof(RowTop));
-            OnPropertyChanged(nameof(GhostLeft));
-            OnPropertyChanged(nameof(GhostWidth));
             OnPropertyChanged(nameof(WorkDays));
             OnPropertyChanged(nameof(RemainingWorkDays));
+            OnPropertyChanged(nameof(ProgressWidth));
         }
-
     }
 
     public class DependencyLine { public string PathData { get; set; } = ""; public Brush LineBrush { get; set; } = Brushes.DarkOrange; }
@@ -309,7 +272,7 @@ namespace GanttChartTool
         public DateTime Date { get; set; }
         public double Left { get; set; }
         public bool IsHourly { get; set; }
-        public string DayText => IsHourly ? Date.ToString("H:mm") : Date.Day.ToString();
+        public string DayText => IsHourly ? Date.ToString("H:mm") : Date.ToString("MM/dd");
         public Brush BackgroundColor => IsHourly ? Brushes.Transparent : ((Date.DayOfWeek == DayOfWeek.Saturday) ? Brushes.AliceBlue : (Date.DayOfWeek == DayOfWeek.Sunday) ? Brushes.MistyRose : Brushes.Transparent);
     }
 
@@ -393,17 +356,28 @@ namespace GanttChartTool
                 else 
                 { 
                     var currentIds = string.IsNullOrWhiteSpace(clickedTask.PredecessorId) ? new List<string>() : clickedTask.PredecessorId.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-                    string sourceIdStr = _sourceTaskForLink.Id.ToString();
+                    string sourceIdStr = _sourceTaskForLink.Id;
                     if (currentIds.Contains(sourceIdStr)) currentIds.Remove(sourceIdStr); else currentIds.Add(sourceIdStr);
                     clickedTask.PredecessorId = string.Join(", ", currentIds);
                     _sourceTaskForLink.IsSelected = false; _sourceTaskForLink = null; 
                 }
+                // ★結線後、必ずUI側に矢印を引き直すように更新通知を投げる
+                UpdateAll();
             }
         }
 
         public void ClearSelection() { if (_dataGridSelectedTask != null) _dataGridSelectedTask.IsRowSelected = false; _dataGridSelectedTask = null; OnPropertyChanged(nameof(DataGridSelectedTask)); SelectedTask = null; MemoTask = null; if (_sourceTaskForLink != null) { _sourceTaskForLink.IsSelected = false; _sourceTaskForLink = null; } }
         
-        public void AddNewTask() { Tasks.Add(new TaskItem(UpdateAll, () => ProjectStartDate, () => IsHourlyMode) { Id = Tasks.Count > 0 ? Tasks.Max(t => t.Id) + 1 : 1, RowIndex = Tasks.Count, Name = "新規タスク", Start = ProjectStartDate.AddHours(9), End = ProjectStartDate.AddHours(17), Progress = 0, IndentLevel = 0 }); UpdateAll(); }
+        public void AddNewTask() 
+        { 
+            var newTask = new TaskItem(UpdateAll, () => ProjectStartDate, () => IsHourlyMode) { Id = Guid.NewGuid().ToString().Substring(0,4), RowIndex = Tasks.Count, Name = "新規タスク", Progress = 0, IndentLevel = 0 };
+            newTask.MainBar.Start = ProjectStartDate.AddHours(9);
+            newTask.MainBar.End = ProjectStartDate.AddHours(17);
+            Tasks.Add(newTask); 
+            RefreshRowIndices();
+            UpdateAll(); 
+        }
+        
         public void AddNewNote() { Notes.Add(new NoteItem { X = 50, Y = 50 }); }
         public void DeleteNote(NoteItem note) { if (note != null) Notes.Remove(note); }
         public void InsertTaskAbove(TaskItem target) { if (target != null) InsertTaskAt(Tasks.IndexOf(target), target.IndentLevel); }
@@ -414,7 +388,9 @@ namespace GanttChartTool
 
         private void InsertTaskAt(int index, int indentLevel)
         {
-            var newTask = new TaskItem(UpdateAll, () => ProjectStartDate, () => IsHourlyMode) { Id = Tasks.Count > 0 ? Tasks.Max(t => t.Id) + 1 : 1, Name = "新規タスク", Start = ProjectStartDate.AddHours(9), End = ProjectStartDate.AddHours(12), Progress = 0, IndentLevel = indentLevel };
+            var newTask = new TaskItem(UpdateAll, () => ProjectStartDate, () => IsHourlyMode) { Id = Guid.NewGuid().ToString().Substring(0,4), Name = "新規タスク", Progress = 0, IndentLevel = indentLevel };
+            newTask.MainBar.Start = ProjectStartDate.AddHours(9);
+            newTask.MainBar.End = ProjectStartDate.AddHours(17);
             if (index >= 0 && index <= Tasks.Count) Tasks.Insert(index, newTask); else Tasks.Add(newTask);
             RefreshRowIndices(); UpdateAll();
         }
@@ -456,9 +432,9 @@ namespace GanttChartTool
 
                 DateTime cmpDate = IsHourlyMode ? DateTime.Now : DateTime.Today;
 
-                if (task.Progress >= 100) ptX = TodayLeft;
-                else if (cmpDate < task.Start && task.Progress <= 0) ptX = TodayLeft;
-                else ptX = task.Left + task.ProgressWidth;
+                if (task.Progress >= 100 || (task.MainBar.Start.HasValue && cmpDate >= task.MainBar.End)) ptX = task.MainBar.Left + task.MainBar.Width;
+                else if (task.MainBar.Start.HasValue && cmpDate < task.MainBar.Start.Value && task.Progress <= 0) ptX = TodayLeft;
+                else ptX = task.MainBar.Left + task.ProgressWidth;
 
                 if (Math.Abs(ptX - TodayLeft) > 0.1)
                 {
@@ -494,19 +470,16 @@ namespace GanttChartTool
                 var preIds = target.PredecessorId.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var idStr in preIds)
                 {
-                    if (int.TryParse(idStr, out int preId))
+                    var source = Tasks.FirstOrDefault(t => t.Id == idStr);
+                    if (source != null && source.EffectiveEnd.HasValue && target.MainBar.Start.HasValue)
                     {
-                        var source = Tasks.FirstOrDefault(t => t.Id == preId);
-                        if (source != null)
-                        {
-                            double startX = source.Left + source.Width;
-                            double startY = source.Top + (source.BarHeight / 2);
-                            double endX = target.Left;
-                            double endY = target.Top + (target.BarHeight / 2);
-                            string path = $"M {startX},{startY} L {startX + 10},{startY} L {startX + 10},{endY} L {endX},{endY}";
-                            Brush taskBrush = (Brush)converter.ConvertFromString(source.LineColorName) ?? Brushes.DarkOrange;
-                            DependencyLines.Add(new DependencyLine { PathData = path, LineBrush = taskBrush });
-                        }
+                        double startX = source.SubBar.Visibility == Visibility.Visible ? source.SubBar.Left + source.SubBar.Width : source.MainBar.Left + source.MainBar.Width;
+                        double startY = source.Top + (source.BarHeight / 2);
+                        double endX = target.MainBar.Left;
+                        double endY = target.Top + (target.BarHeight / 2);
+                        string path = $"M {startX},{startY} L {startX + 10},{startY} L {startX + 10},{endY} L {endX},{endY}";
+                        Brush taskBrush = (Brush)converter.ConvertFromString(source.LineColorName) ?? Brushes.DarkOrange;
+                        DependencyLines.Add(new DependencyLine { PathData = path, LineBrush = taskBrush });
                     }
                 }
             }
@@ -524,12 +497,12 @@ namespace GanttChartTool
         {
             if (string.IsNullOrWhiteSpace(task.PredecessorId)) return;
             var preIds = task.PredecessorId.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (var idStr in preIds) { if (int.TryParse(idStr, out int preId)) { var pre = Tasks.FirstOrDefault(t => t.Id == preId); if (pre != null && !pre.IsRelevant) { pre.IsRelevant = true; HighlightPredecessors(pre); } } }
+            foreach (var idStr in preIds) { var pre = Tasks.FirstOrDefault(t => t.Id == idStr); if (pre != null && !pre.IsRelevant) { pre.IsRelevant = true; HighlightPredecessors(pre); } }
         }
 
         private void HighlightSuccessors(TaskItem task)
         {
-            string idStr = task.Id.ToString();
+            string idStr = task.Id;
             var successors = Tasks.Where(t => !string.IsNullOrWhiteSpace(t.PredecessorId) && t.PredecessorId.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Contains(idStr));
             foreach (var suc in successors) { if (!suc.IsRelevant) { suc.IsRelevant = true; HighlightSuccessors(suc); } }
         }
@@ -555,7 +528,9 @@ namespace GanttChartTool
             string jsonString = File.ReadAllText(filePath);
             try
             {
-                var data = JsonSerializer.Deserialize<ProjectSaveData>(jsonString);
+                var options = new JsonSerializerOptions { NumberHandling = JsonNumberHandling.AllowReadingFromString };
+                var data = JsonSerializer.Deserialize<ProjectSaveData>(jsonString, options);
+                
                 if (data != null)
                 {
                     ProjectStartDate = data.ProjectStartDate;
@@ -565,20 +540,26 @@ namespace GanttChartTool
                     IsHourlyMode = data.IsHourlyMode;
 
                     Tasks.Clear();
-                    foreach (var task in data.Tasks) { task.SetReferences(UpdateAll, () => ProjectStartDate, () => IsHourlyMode); Tasks.Add(task); }
+                    foreach (var task in data.Tasks) 
+                    { 
+                        task.SetReferences(UpdateAll, () => ProjectStartDate, () => IsHourlyMode); 
+                        task.MigrateOldData(); 
+                        Tasks.Add(task); 
+                    }
+                    
                     Notes.Clear();
-                    foreach (var note in data.Notes) Notes.Add(note);
-                    RefreshRowIndices(); UpdateAll(); CurrentFilePath = filePath;
+                    if (data.Notes != null) foreach (var note in data.Notes) Notes.Add(note);
+                    
+                    RefreshRowIndices(); 
+                    UpdateAll(); 
+                    CurrentFilePath = filePath;
                     return;
                 }
             }
-            catch { }
-            try
+            catch (Exception ex)
             {
-                var oldTasks = JsonSerializer.Deserialize<ObservableCollection<TaskItem>>(jsonString);
-                if (oldTasks != null) { Tasks.Clear(); foreach (var task in oldTasks) { task.SetReferences(UpdateAll, () => ProjectStartDate, () => IsHourlyMode); Tasks.Add(task); } RefreshRowIndices(); UpdateAll(); CurrentFilePath = filePath; }
+                MessageBox.Show($"ファイルの読み込みに失敗しました。\n詳細: {ex.Message}");
             }
-            catch { MessageBox.Show("ファイルの読み込みに失敗しました。"); }
         }
     }
 }

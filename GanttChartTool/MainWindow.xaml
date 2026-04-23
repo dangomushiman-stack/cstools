@@ -3,6 +3,36 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="{Binding WindowTitle}" Height="650" Width="1300"
         x:Name="RootWindow" Loaded="Window_Loaded">
+    
+    <Window.Resources>
+        <Style x:Key="OrangeToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#F8F8F8"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Background" Value="DarkOrange"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="BorderBrush" Value="DarkOrange"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -28,8 +58,8 @@
             <Button Content="📂 読込" Margin="5" Padding="8,0" Click="Load_Click" Background="White"/>
             
             <Border Width="1" Background="#DDDDDD" Margin="5,8"/>
-            <ToggleButton Content="🔗 矢印モード" IsChecked="{Binding IsLinkMode}" Margin="5" Padding="5,0"/>
-            <ToggleButton Content="⏱ 時間モード" IsChecked="{Binding IsHourlyMode}" Margin="5" Padding="5,0"/>
+            <ToggleButton Content="🔗 矢印モード" IsChecked="{Binding IsLinkMode}" Style="{StaticResource OrangeToggleStyle}"/>
+            <ToggleButton Content="⏱ 時間モード" IsChecked="{Binding IsHourlyMode}" Style="{StaticResource OrangeToggleStyle}"/>
 
             <Border Width="1" Background="#DDDDDD" Margin="5,8"/>
             <CheckBox Content="イナズマ線" IsChecked="{Binding IsProgressLineVisible}" VerticalAlignment="Center" Margin="5" FontSize="11"/>
@@ -55,22 +85,16 @@
             </DataGrid.ContextMenu>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" IsReadOnly="True" Width="30"/>
-                
                 <DataGridTemplateColumn Header="タスク名" Width="140">
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Name}" Margin="{Binding IndentMargin}" VerticalAlignment="Center">
-                                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="FontWeight" Value="Normal"/><Style.Triggers><DataTrigger Binding="{Binding IsGroup}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-                            </TextBlock>
-                        </DataTemplate>
+                        <DataTemplate><TextBlock Text="{Binding Name}" Margin="{Binding IndentMargin}" VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="FontWeight" Value="Normal"/><Style.Triggers><DataTrigger Binding="{Binding IsGroup}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="{Binding IndentMargin}"/></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
-
                 <DataGridTextColumn Header="担当者" Binding="{Binding Assignee, UpdateSourceTrigger=PropertyChanged}" Width="60"/>
-
+                
                 <DataGridTemplateColumn Header="色" Width="55">
-                    <DataGridTemplateColumn.CellTemplate><DataTemplate><ComboBox ItemsSource="{Binding DataContext.AvailableBarColors, RelativeSource={RelativeSource AncestorType=DataGrid}}" SelectedItem="{Binding BarColorName, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent"/></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellTemplate><DataTemplate><ComboBox ItemsSource="{Binding DataContext.AvailableBarColors, RelativeSource={RelativeSource AncestorType=DataGrid}}" SelectedItem="{Binding MainBar.ColorName, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent"/></DataTemplate></DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 
                 <DataGridTextColumn Header="%" Binding="{Binding Progress, UpdateSourceTrigger=PropertyChanged}" Width="35"/>
@@ -78,89 +102,45 @@
                 
                 <DataGridTemplateColumn Header="開始" Width="85">
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="{Binding Start, StringFormat=MM/dd}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding Start, StringFormat='MM/dd HH:mm'}"/></DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </DataTemplate>
+                        <DataTemplate><TextBlock VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="{Binding MainBar.Start, StringFormat=MM/dd}"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding MainBar.Start, StringFormat='MM/dd HH:mm'}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate><TextBox Text="{Binding Start, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding Start, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate>
+                        <DataTemplate><TextBox Text="{Binding MainBar.Start, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding MainBar.Start, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
                 <DataGridTemplateColumn Header="終了" Width="85">
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="{Binding End, StringFormat=MM/dd}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding End, StringFormat='MM/dd HH:mm'}"/></DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </DataTemplate>
+                        <DataTemplate><TextBlock VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="{Binding MainBar.End, StringFormat=MM/dd}"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding MainBar.End, StringFormat='MM/dd HH:mm'}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate><TextBox Text="{Binding End, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding End, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate>
+                        <DataTemplate><TextBox Text="{Binding MainBar.End, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding MainBar.End, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTextColumn Header="後作業名" Binding="{Binding SubTaskName, UpdateSourceTrigger=PropertyChanged}" Width="80"/>
+                <DataGridTextColumn Header="後作業名" Binding="{Binding SubBar.Name, UpdateSourceTrigger=PropertyChanged}" Width="80"/>
 
                 <DataGridTemplateColumn Header="後開始" Width="85">
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="{Binding SubTaskStart, StringFormat=MM/dd, TargetNullValue=''}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding SubTaskStart, StringFormat='MM/dd HH:mm', TargetNullValue=''}"/></DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </DataTemplate>
+                        <DataTemplate><TextBlock VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="{Binding SubBar.Start, StringFormat=MM/dd, TargetNullValue=''}"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding SubBar.Start, StringFormat='MM/dd HH:mm', TargetNullValue=''}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate><TextBox Text="{Binding SubTaskStart, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding SubTaskStart, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate>
+                        <DataTemplate><TextBox Text="{Binding SubBar.Start, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding SubBar.Start, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
                 <DataGridTemplateColumn Header="後終了" Width="85">
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="{Binding SubTaskEnd, StringFormat=MM/dd, TargetNullValue=''}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding SubTaskEnd, StringFormat='MM/dd HH:mm', TargetNullValue=''}"/></DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </DataTemplate>
+                        <DataTemplate><TextBlock VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="{Binding SubBar.End, StringFormat=MM/dd, TargetNullValue=''}"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding SubBar.End, StringFormat='MM/dd HH:mm', TargetNullValue=''}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate><TextBox Text="{Binding SubTaskEnd, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding SubTaskEnd, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate>
+                        <DataTemplate><TextBox Text="{Binding SubBar.End, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding SubBar.End, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
                 <DataGridTemplateColumn Header="後色" Width="55">
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate><ComboBox ItemsSource="{Binding DataContext.AvailableBarColors, RelativeSource={RelativeSource AncestorType=DataGrid}}" SelectedItem="{Binding SubTaskBarColorName, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent"/></DataTemplate>
+                        <DataTemplate><ComboBox ItemsSource="{Binding DataContext.AvailableBarColors, RelativeSource={RelativeSource AncestorType=DataGrid}}" SelectedItem="{Binding SubBar.ColorName, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent"/></DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
@@ -172,6 +152,7 @@
 
         <ScrollViewer x:Name="GanttScrollViewer" Grid.Row="1" Grid.Column="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="#FAFAFA" ScrollChanged="GanttScrollViewer_ScrollChanged">
             <Grid HorizontalAlignment="Left" VerticalAlignment="Top" MouseLeftButtonDown="ChartBackground_MouseLeftButtonDown">
+                
                 <ItemsControl ItemsSource="{Binding GridDays}">
                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas Width="{Binding DataContext.ChartWidth, ElementName=RootWindow}" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Canvas.Left" Value="{Binding Left}"/></Style></ItemsControl.ItemContainerStyle>
@@ -201,28 +182,28 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Canvas>
-                                <Border Canvas.Left="{Binding GhostLeft}" Canvas.Top="{Binding Top}" Width="{Binding GhostWidth}" Height="{Binding BarHeight}" Background="{Binding BarColor}" Opacity="0.3" CornerRadius="2">
-                                    <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsDragging}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Border.Style>
-                                </Border>
+                                <Border Canvas.Left="{Binding MainBar.GhostLeft}" Canvas.Top="{Binding Top}" Width="{Binding MainBar.GhostWidth}" Height="{Binding BarHeight}" Background="{Binding MainBar.Brush}" Visibility="{Binding MainBar.GhostVisibility}" Opacity="0.3" CornerRadius="2" />
                                 
-                                <Border Canvas.Left="{Binding Left}" Canvas.Top="{Binding Top}" Width="{Binding Width}" Height="{Binding BarHeight}" Background="{Binding BarColor}" Opacity="{Binding BarOpacity}" CornerRadius="2" Cursor="SizeAll" ClipToBounds="True" MouseLeftButtonDown="TaskBar_MouseLeftButtonDown" MouseMove="TaskBar_MouseMove" MouseLeftButtonUp="TaskBar_MouseLeftButtonUp">
+                                <Border Canvas.Left="{Binding MainBar.Left}" Canvas.Top="{Binding Top}" Width="{Binding MainBar.Width}" Height="{Binding BarHeight}" Background="{Binding MainBar.Brush}" Visibility="{Binding MainBar.Visibility}" Opacity="{Binding BarOpacity}" CornerRadius="2" Cursor="SizeAll" ClipToBounds="True" Tag="MainBar" MouseLeftButtonDown="Bar_MouseLeftButtonDown" MouseMove="Bar_MouseMove" MouseLeftButtonUp="Bar_MouseLeftButtonUp">
                                     <Border.Effect><DropShadowEffect BlurRadius="3" ShadowDepth="1" Opacity="0.2"/></Border.Effect>
                                     <Grid>
                                         <Rectangle Fill="#50000000" Width="{Binding ProgressWidth}" HorizontalAlignment="Left"/>
                                         <TextBlock Text="{Binding Name}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="11" IsHitTestVisible="False">
                                             <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding IsGroup}" Value="True"><Setter Property="Visibility" Value="Hidden"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                                         </TextBlock>
-                                        <Border Width="8" HorizontalAlignment="Left" Background="Transparent" Cursor="SizeWE" MouseLeftButtonDown="TaskBarResizeLeft_MouseLeftButtonDown" MouseMove="TaskBar_MouseMove" MouseLeftButtonUp="TaskBar_MouseLeftButtonUp"/>
-                                        <Border Width="8" HorizontalAlignment="Right" Background="Transparent" Cursor="SizeWE" MouseLeftButtonDown="TaskBarResizeRight_MouseLeftButtonDown" MouseMove="TaskBar_MouseMove" MouseLeftButtonUp="TaskBar_MouseLeftButtonUp"/>
+                                        <Border Width="8" HorizontalAlignment="Left" Background="Transparent" Cursor="SizeWE" Tag="MainBar" MouseLeftButtonDown="BarResizeLeft_MouseLeftButtonDown" MouseMove="Bar_MouseMove" MouseLeftButtonUp="Bar_MouseLeftButtonUp"/>
+                                        <Border Width="8" HorizontalAlignment="Right" Background="Transparent" Cursor="SizeWE" Tag="MainBar" MouseLeftButtonDown="BarResizeRight_MouseLeftButtonDown" MouseMove="Bar_MouseMove" MouseLeftButtonUp="Bar_MouseLeftButtonUp"/>
                                     </Grid>
                                 </Border>
 
-                                <Border Canvas.Left="{Binding SubTaskLeft}" Canvas.Top="{Binding Top}" Width="{Binding SubTaskWidth}" Height="{Binding BarHeight}" Background="{Binding SubTaskBarColor}" Visibility="{Binding SubTaskVisibility}" Opacity="0.8" CornerRadius="2" BorderBrush="White" BorderThickness="1,0,1,0" Cursor="SizeAll" ClipToBounds="True" MouseLeftButtonDown="SubTaskBar_MouseLeftButtonDown" MouseMove="SubTaskBar_MouseMove" MouseLeftButtonUp="SubTaskBar_MouseLeftButtonUp">
+                                <Border Canvas.Left="{Binding SubBar.GhostLeft}" Canvas.Top="{Binding Top}" Width="{Binding SubBar.GhostWidth}" Height="{Binding BarHeight}" Background="{Binding SubBar.Brush}" Visibility="{Binding SubBar.GhostVisibility}" Opacity="0.3" CornerRadius="2" />
+                                
+                                <Border Canvas.Left="{Binding SubBar.Left}" Canvas.Top="{Binding Top}" Width="{Binding SubBar.Width}" Height="{Binding BarHeight}" Background="{Binding SubBar.Brush}" Visibility="{Binding SubBar.Visibility}" Opacity="0.8" CornerRadius="2" BorderBrush="White" BorderThickness="1,0,1,0" Cursor="SizeAll" ClipToBounds="True" Tag="SubBar" MouseLeftButtonDown="Bar_MouseLeftButtonDown" MouseMove="Bar_MouseMove" MouseLeftButtonUp="Bar_MouseLeftButtonUp">
                                     <Border.Style><Style TargetType="Border"><Style.Triggers><DataTrigger Binding="{Binding IsGroup}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Border.Style>
                                     <Grid>
-                                        <TextBlock Text="{Binding SubTaskName}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" FontWeight="Normal" Opacity="0.9" IsHitTestVisible="False"/>
-                                        <Border Width="8" HorizontalAlignment="Left" Background="Transparent" Cursor="SizeWE" MouseLeftButtonDown="SubTaskBarResizeLeft_MouseLeftButtonDown" MouseMove="SubTaskBar_MouseMove" MouseLeftButtonUp="SubTaskBar_MouseLeftButtonUp"/>
-                                        <Border Width="8" HorizontalAlignment="Right" Background="Transparent" Cursor="SizeWE" MouseLeftButtonDown="SubTaskBarResizeRight_MouseLeftButtonDown" MouseMove="SubTaskBar_MouseMove" MouseLeftButtonUp="SubTaskBar_MouseLeftButtonUp"/>
+                                        <TextBlock Text="{Binding SubBar.Name}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" FontWeight="Normal" Opacity="0.9" IsHitTestVisible="False"/>
+                                        <Border Width="8" HorizontalAlignment="Left" Background="Transparent" Cursor="SizeWE" Tag="SubBar" MouseLeftButtonDown="BarResizeLeft_MouseLeftButtonDown" MouseMove="Bar_MouseMove" MouseLeftButtonUp="Bar_MouseLeftButtonUp"/>
+                                        <Border Width="8" HorizontalAlignment="Right" Background="Transparent" Cursor="SizeWE" Tag="SubBar" MouseLeftButtonDown="BarResizeRight_MouseLeftButtonDown" MouseMove="Bar_MouseMove" MouseLeftButtonUp="Bar_MouseLeftButtonUp"/>
                                     </Grid>
                                 </Border>
                             </Canvas>
