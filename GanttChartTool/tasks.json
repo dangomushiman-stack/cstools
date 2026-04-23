@@ -1,308 +1,388 @@
 {
   "Tasks": [
     {
-      "Id": 1,
+      "Id": "1",
       "Name": "\u4E2D\u56FD\u96FB\u529B",
       "Assignee": "",
       "Memo": "",
       "IsGroup": true,
       "IndentLevel": 0,
-      "Start": "2026-04-01T00:00:00",
-      "End": "2026-04-25T00:00:00",
-      "SubTaskName": "",
-      "SubTaskStart": null,
-      "SubTaskEnd": null,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-01T00:00:00",
+        "End": "2026-04-25T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 20,
       "PredecessorId": "",
       "RowIndex": 0,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "SteelBlue",
-      "SubTaskBarColorName": "DimGray"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 2,
+      "Id": "2",
       "Name": "\u8981\u4EF6\u5B9A\u7FA9",
       "Assignee": "",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 1,
-      "Start": "2026-04-01T00:00:00",
-      "End": "2026-04-04T00:00:00",
-      "SubTaskName": "",
-      "SubTaskStart": null,
-      "SubTaskEnd": null,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-01T00:00:00",
+        "End": "2026-04-04T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 100,
       "PredecessorId": "",
       "RowIndex": 1,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "SteelBlue",
-      "SubTaskBarColorName": "DimGray"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 6,
+      "Id": "6",
       "Name": "B1",
       "Assignee": "",
       "Memo": "",
       "IsGroup": true,
       "IndentLevel": 1,
-      "Start": "2026-04-20T00:00:00",
-      "End": "2026-04-23T00:00:00",
-      "SubTaskName": "",
-      "SubTaskStart": null,
-      "SubTaskEnd": null,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-20T00:00:00",
+        "End": "2026-04-23T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "",
       "RowIndex": 2,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "SteelBlue",
-      "SubTaskBarColorName": "DimGray"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 3,
+      "Id": "3",
       "Name": "DB\u7BA1\u7406\u6A5F\u80FD\u4ED5\u69D8\u66F8",
       "Assignee": "",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 2,
-      "Start": "2026-04-06T00:00:00",
-      "End": "2026-04-13T00:00:00",
-      "SubTaskName": "",
-      "SubTaskStart": null,
-      "SubTaskEnd": null,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-06T00:00:00",
+        "End": "2026-04-13T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 40,
       "PredecessorId": "2",
       "RowIndex": 3,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "SteelBlue",
-      "SubTaskBarColorName": "DimGray"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 13,
+      "Id": "13",
       "Name": "DB\u7BA1\u7406\u6A5F\u80FD\u753B\u9762\u4ED5\u69D8\u66F8",
       "Assignee": "",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 2,
-      "Start": "2026-04-06T00:00:00+09:00",
-      "End": "2026-04-13T00:00:00+09:00",
-      "SubTaskName": "",
-      "SubTaskStart": null,
-      "SubTaskEnd": null,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-06T00:00:00+09:00",
+        "End": "2026-04-13T00:00:00+09:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "",
       "RowIndex": 4,
-      "LineColorName": "Crimson",
-      "BarColorName": "SteelBlue",
-      "SubTaskBarColorName": "DimGray"
+      "LineColorName": "Crimson"
     },
     {
-      "Id": 7,
+      "Id": "7",
       "Name": "DB\u30A4\u30F3\u30BF\u30FC\u30D5\u30A7\u30A4\u30B9\u4ED5\u69D8\u66F8",
       "Assignee": "",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 2,
-      "Start": "2026-04-06T00:00:00",
-      "End": "2026-04-13T00:00:00",
-      "SubTaskName": "",
-      "SubTaskStart": null,
-      "SubTaskEnd": null,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-06T00:00:00",
+        "End": "2026-04-13T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "",
       "RowIndex": 5,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "SteelBlue",
-      "SubTaskBarColorName": "DimGray"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 15,
+      "Id": "15",
       "Name": "DBT\u30A4\u30F3\u30BF\u30FC\u30D5\u30A7\u30A4\u30B9\u4ED5\u69D8\u66F8",
       "Assignee": "",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 2,
-      "Start": "2026-04-06T00:00:00",
-      "End": "2026-04-13T00:00:00",
-      "SubTaskName": "",
-      "SubTaskStart": null,
-      "SubTaskEnd": null,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-06T00:00:00",
+        "End": "2026-04-13T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "",
       "RowIndex": 6,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "SteelBlue",
-      "SubTaskBarColorName": "DimGray"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 11,
+      "Id": "11",
       "Name": "B2 \u4ED6PKG",
       "Assignee": "",
       "Memo": "",
       "IsGroup": true,
       "IndentLevel": 1,
-      "Start": "2026-04-20T00:00:00",
-      "End": "2026-04-23T00:00:00",
-      "SubTaskName": "",
-      "SubTaskStart": null,
-      "SubTaskEnd": null,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-20T00:00:00",
+        "End": "2026-04-23T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "",
       "RowIndex": 7,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "SteelBlue",
-      "SubTaskBarColorName": "DimGray"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 12,
+      "Id": "12",
       "Name": "\u5171\u901A\u30C7\u30FC\u30BF\u69CB\u9020\u4ED5\u69D8\u66F8",
       "Assignee": "\u8FBB\u5143",
       "Memo": "[2025/06/13]\r\n\u30EA\u30EA\u30FC\u30B9\u3092\u5F85\u3063\u3066\u3044\u308B\u72B6\u6CC1",
       "IsGroup": false,
       "IndentLevel": 2,
-      "Start": "2026-04-13T00:00:00",
-      "End": "2026-04-16T00:00:00",
-      "SubTaskName": "",
-      "SubTaskStart": null,
-      "SubTaskEnd": null,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-13T00:00:00",
+        "End": "2026-04-16T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "7",
       "RowIndex": 8,
-      "LineColorName": "RoyalBlue",
-      "BarColorName": "SteelBlue",
-      "SubTaskBarColorName": "DimGray"
+      "LineColorName": "RoyalBlue"
     },
     {
-      "Id": 8,
+      "Id": "8",
       "Name": "B2",
       "Assignee": "",
       "Memo": "",
       "IsGroup": true,
       "IndentLevel": 1,
-      "Start": "2026-04-20T00:00:00",
-      "End": "2026-04-23T00:00:00",
-      "SubTaskName": "",
-      "SubTaskStart": null,
-      "SubTaskEnd": null,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-20T00:00:00",
+        "End": "2026-04-23T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "",
       "RowIndex": 9,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "SteelBlue",
-      "SubTaskBarColorName": "DimGray"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 4,
+      "Id": "4",
       "Name": "DBM\u30D7\u30ED\u30B0\u30E9\u30E0\u4ED5\u69D8\u66F8",
       "Assignee": "\u5965\u5CF6",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 2,
-      "Start": "2026-04-20T00:00:00",
-      "End": "2026-04-24T00:00:00",
-      "SubTaskName": "DR",
-      "SubTaskStart": "2026-04-29T00:00:00",
-      "SubTaskEnd": "2026-04-30T00:00:00",
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-20T00:00:00",
+        "End": "2026-04-24T00:00:00"
+      },
+      "SubBar": {
+        "Name": "DR",
+        "ColorName": "MediumSeaGreen",
+        "Start": "2026-04-29T00:00:00",
+        "End": "2026-04-30T00:00:00"
+      },
       "Progress": 0,
       "PredecessorId": "3",
       "RowIndex": 10,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "SteelBlue",
-      "SubTaskBarColorName": "MediumSeaGreen"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 16,
+      "Id": "16",
       "Name": "DR",
       "Assignee": "",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 2,
-      "Start": "2026-04-24T00:00:00",
-      "End": "2026-04-25T00:00:00",
-      "SubTaskName": "",
-      "SubTaskStart": null,
-      "SubTaskEnd": null,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-24T00:00:00",
+        "End": "2026-04-25T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "4",
       "RowIndex": 11,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "SteelBlue",
-      "SubTaskBarColorName": "DimGray"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 14,
+      "Id": "14",
       "Name": "DBM\u753B\u9762\u30D7\u30ED\u30B0\u30E9\u30E0\u4ED5\u69D8\u66F8",
       "Assignee": "\u5965\u5CF6",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 2,
-      "Start": "2026-04-20T00:00:00+09:00",
-      "End": "2026-04-24T00:00:00+09:00",
-      "SubTaskName": "",
-      "SubTaskStart": null,
-      "SubTaskEnd": null,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-20T00:00:00+09:00",
+        "End": "2026-04-24T00:00:00+09:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "13",
       "RowIndex": 12,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "SteelBlue",
-      "SubTaskBarColorName": "DimGray"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 10,
+      "Id": "10",
       "Name": "RDB\u69CB\u9020\u4ED5\u69D8\u66F8",
       "Assignee": "\u670D\u90E8",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 2,
-      "Start": "2026-04-20T00:00:00",
-      "End": "2026-04-24T00:00:00",
-      "SubTaskName": "",
-      "SubTaskStart": null,
-      "SubTaskEnd": null,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-20T00:00:00",
+        "End": "2026-04-24T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "7",
       "RowIndex": 13,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "SteelBlue",
-      "SubTaskBarColorName": "DimGray"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 9,
+      "Id": "9",
       "Name": "FFE\u30D7\u30ED\u30B0\u30E9\u30E0\u4ED5\u69D8\u66F8",
       "Assignee": "\u670D\u90E8",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 2,
-      "Start": "2026-04-20T00:00:00",
-      "End": "2026-04-24T00:00:00",
-      "SubTaskName": "",
-      "SubTaskStart": null,
-      "SubTaskEnd": null,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-20T00:00:00",
+        "End": "2026-04-24T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "",
       "RowIndex": 14,
-      "LineColorName": "DarkOrange",
-      "BarColorName": "SteelBlue",
-      "SubTaskBarColorName": "DimGray"
+      "LineColorName": "DarkOrange"
     },
     {
-      "Id": 5,
+      "Id": "5",
       "Name": "\u30E1\u30F3\u30D0\u751F\u6210\u4ED5\u69D8\u66F8",
       "Assignee": "\u5965\u5CF6",
       "Memo": "",
       "IsGroup": false,
       "IndentLevel": 2,
-      "Start": "2026-04-20T00:00:00",
-      "End": "2026-04-24T00:00:00",
-      "SubTaskName": "",
-      "SubTaskStart": null,
-      "SubTaskEnd": null,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-20T00:00:00",
+        "End": "2026-04-24T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
       "Progress": 0,
       "PredecessorId": "12",
       "RowIndex": 15,
-      "LineColorName": "SeaGreen",
-      "BarColorName": "SteelBlue",
-      "SubTaskBarColorName": "DimGray"
+      "LineColorName": "SeaGreen"
     }
   ],
   "Notes": [],
@@ -310,5 +390,7 @@
   "DisplayDays": 30,
   "IsProgressLineVisible": false,
   "IsWorkDayAdjustmentEnabled": false,
-  "IsHourlyMode": false
+  "IsHourlyMode": false,
+  "IntervalTicks": 864000000000,
+  "IsSnapToDay": false
 }

@@ -18,14 +18,8 @@
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#F8F8F8"/>
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter Property="Background" Value="DarkOrange"/>
-                                <Setter Property="Foreground" Value="White"/>
-                                <Setter Property="BorderBrush" Value="DarkOrange"/>
-                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#F8F8F8"/></Trigger>
+                            <Trigger Property="IsChecked" Value="True"><Setter Property="Background" Value="DarkOrange"/><Setter Property="Foreground" Value="White"/><Setter Property="BorderBrush" Value="DarkOrange"/></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -34,20 +28,13 @@
     </Window.Resources>
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="750"/>
-            <ColumnDefinition Width="5"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="750"/><ColumnDefinition Width="5"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
 
         <WrapPanel Grid.Row="0" Grid.ColumnSpan="3" Background="#F5F5F5" Orientation="Horizontal">
             <Button Content="＋ タスク" Width="70" Margin="5" Click="AddTask_Click" Background="White"/>
             <Button Content="📝 メモ" Width="60" Margin="5" Click="AddNote_Click" Background="White"/>
+            <Button Content="💬 吹き出し" Width="80" Margin="0,5,5,5" Click="AddCallout_Click" Background="White"/>
             <Border Width="1" Background="#DDDDDD" Margin="5,8"/>
             <Button Content="↑" Margin="2,5" Width="25" Click="MoveUp_Click" Background="White"/>
             <Button Content="↓" Margin="2,5" Width="25" Click="MoveDown_Click" Background="White"/>
@@ -56,109 +43,95 @@
             <Border Width="1" Background="#DDDDDD" Margin="5,8"/>
             <Button Content="💾 保存" Margin="5" Padding="8,0" Click="Save_Click" Background="#E8F0FE" BorderBrush="SteelBlue"/>
             <Button Content="📂 読込" Margin="5" Padding="8,0" Click="Load_Click" Background="White"/>
-            
             <Border Width="1" Background="#DDDDDD" Margin="5,8"/>
             <ToggleButton Content="🔗 矢印モード" IsChecked="{Binding IsLinkMode}" Style="{StaticResource OrangeToggleStyle}"/>
-
             <Border Width="1" Background="#DDDDDD" Margin="5,8"/>
-            
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="5">
                 <TextBlock Text="表示単位:" VerticalAlignment="Center" Margin="0,0,5,0" FontSize="11" Foreground="Gray"/>
-                <ComboBox ItemsSource="{Binding IntervalOptions}" SelectedItem="{Binding SelectedInterval}" DisplayMemberPath="Name" Width="75" VerticalContentAlignment="Center"/>
-                <CheckBox Content="1日単位でスナップ" IsChecked="{Binding IsSnapToDay}" VerticalAlignment="Center" Margin="10,0,0,0" FontSize="11"/>
+                <ComboBox ItemsSource="{Binding IntervalOptions}" SelectedItem="{Binding SelectedInterval}" DisplayMemberPath="Name" Width="75"/>
+                <CheckBox Content="1日単位スナップ" IsChecked="{Binding IsSnapToDay}" VerticalAlignment="Center" Margin="10,0,0,0" FontSize="11"/>
             </StackPanel>
-
             <Border Width="1" Background="#DDDDDD" Margin="5,8"/>
             <CheckBox Content="イナズマ線" IsChecked="{Binding IsProgressLineVisible}" VerticalAlignment="Center" Margin="5" FontSize="11"/>
             <CheckBox Content="営業日連動" IsChecked="{Binding IsWorkDayAdjustmentEnabled}" VerticalAlignment="Center" Margin="5" FontSize="11"/>
-
             <Border Width="1" Background="#DDDDDD" Margin="5,8"/>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="開始日:" VerticalAlignment="Center" Margin="5,0" FontSize="11" Foreground="Gray"/>
-                <DatePicker SelectedDate="{Binding ProjectStartDate, UpdateSourceTrigger=PropertyChanged}" Width="100"/>
+                <DatePicker SelectedDate="{Binding ProjectStartDate}" Width="100"/>
                 <TextBlock Text="マス数:" VerticalAlignment="Center" Margin="10,0,5,0" FontSize="11" Foreground="Gray"/>
-                <TextBox Text="{Binding DisplayDays, UpdateSourceTrigger=LostFocus}" Width="40" VerticalContentAlignment="Center" TextAlignment="Center"/>
+                <TextBox Text="{Binding DisplayDays, UpdateSourceTrigger=LostFocus}" Width="40" TextAlignment="Center"/>
             </StackPanel>
         </WrapPanel>
 
-        <DataGrid x:Name="MainDataGrid" Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Tasks}" 
-                  SelectedItem="{Binding DataGridSelectedTask}"
-                  AutoGenerateColumns="False" CanUserAddRows="False" RowHeight="40" ColumnHeaderHeight="40" 
-                  VerticalContentAlignment="Center" BorderThickness="0" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#EEEEEE">
-            <DataGrid.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="↑ 上へ移動" Click="MoveUp_Click"/><MenuItem Header="↓ 下へ移動" Click="MoveDown_Click"/><Separator/><MenuItem Header="上に行を追加" Click="InsertAbove_Click"/><MenuItem Header="下に行を追加" Click="InsertBelow_Click"/><Separator/><MenuItem Header="行を削除" Click="DeleteRow_Click" Foreground="Red"/>
-                </ContextMenu>
-            </DataGrid.ContextMenu>
+        <DataGrid x:Name="MainDataGrid" Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Tasks}" SelectedItem="{Binding DataGridSelectedTask}" PreviewKeyDown="MainDataGrid_PreviewKeyDown" AutoGenerateColumns="False" CanUserAddRows="False" RowHeight="40" ColumnHeaderHeight="40" BorderThickness="0" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#EEEEEE">
+            <DataGrid.ContextMenu><ContextMenu><MenuItem Header="↑ 上へ移動" Click="MoveUp_Click"/><MenuItem Header="↓ 下へ移動" Click="MoveDown_Click"/><Separator/><MenuItem Header="上に行を追加" Click="InsertAbove_Click"/><MenuItem Header="下に行を追加" Click="InsertBelow_Click"/><Separator/><MenuItem Header="行を削除" Click="DeleteRow_Click" Foreground="Red"/></ContextMenu></DataGrid.ContextMenu>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" IsReadOnly="True" Width="30"/>
+                
                 <DataGridTemplateColumn Header="タスク名" Width="140">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate><TextBlock Text="{Binding Name}" Margin="{Binding IndentMargin}" VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="FontWeight" Value="Normal"/><Style.Triggers><DataTrigger Binding="{Binding IsGroup}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Name}" Margin="{Binding IndentMargin}" VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="FontWeight" Value="Normal"/><Style.Triggers><DataTrigger Binding="{Binding IsGroup}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate></DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="{Binding IndentMargin}"/></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="担当者" Binding="{Binding Assignee, UpdateSourceTrigger=PropertyChanged}" Width="60"/>
+                
+                <DataGridTextColumn Header="担当者" Binding="{Binding Assignee}" Width="60"/>
                 
                 <DataGridTemplateColumn Header="色" Width="55">
-                    <DataGridTemplateColumn.CellTemplate><DataTemplate><ComboBox ItemsSource="{Binding DataContext.AvailableBarColors, RelativeSource={RelativeSource AncestorType=DataGrid}}" SelectedItem="{Binding MainBar.ColorName, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent"/></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ComboBox ItemsSource="{Binding DataContext.AvailableBarColors, ElementName=RootWindow}" SelectedItem="{Binding MainBar.ColorName, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 
-                <DataGridTextColumn Header="%" Binding="{Binding Progress, UpdateSourceTrigger=PropertyChanged}" Width="35"/>
+                <DataGridTextColumn Header="%" Binding="{Binding Progress}" Width="35"/>
                 <DataGridTextColumn Header="営業日" Binding="{Binding WorkDays, UpdateSourceTrigger=LostFocus}" Width="45"/>
                 
                 <DataGridTemplateColumn Header="開始" Width="85">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate><TextBlock VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="{Binding MainBar.Start, StringFormat=MM/dd}"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding MainBar.Start, StringFormat='MM/dd HH:mm'}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                    <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate><TextBox Text="{Binding MainBar.Start, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding MainBar.Start, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate>
-                    </DataGridTemplateColumn.CellEditingTemplate>
+                    <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="{Binding MainBar.Start, StringFormat=MM/dd}"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, ElementName=RootWindow}" Value="True"><Setter Property="Text" Value="{Binding MainBar.Start, StringFormat='MM/dd HH:mm'}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><TextBox Text="{Binding MainBar.Start, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, ElementName=RootWindow}" Value="True"><Setter Property="Text" Value="{Binding MainBar.Start, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
-
+                
                 <DataGridTemplateColumn Header="終了" Width="85">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate><TextBlock VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="{Binding MainBar.End, StringFormat=MM/dd}"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding MainBar.End, StringFormat='MM/dd HH:mm'}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                    <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate><TextBox Text="{Binding MainBar.End, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding MainBar.End, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate>
-                    </DataGridTemplateColumn.CellEditingTemplate>
+                    <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="{Binding MainBar.End, StringFormat=MM/dd}"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, ElementName=RootWindow}" Value="True"><Setter Property="Text" Value="{Binding MainBar.End, StringFormat='MM/dd HH:mm'}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><TextBox Text="{Binding MainBar.End, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, ElementName=RootWindow}" Value="True"><Setter Property="Text" Value="{Binding MainBar.End, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
-
-                <DataGridTextColumn Header="後作業名" Binding="{Binding SubBar.Name, UpdateSourceTrigger=PropertyChanged}" Width="80"/>
-
+                
+                <DataGridTextColumn Header="後作業名" Binding="{Binding SubBar.Name}" Width="80"/>
+                
                 <DataGridTemplateColumn Header="後開始" Width="85">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate><TextBlock VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="{Binding SubBar.Start, StringFormat=MM/dd, TargetNullValue=''}"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding SubBar.Start, StringFormat='MM/dd HH:mm', TargetNullValue=''}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                    <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate><TextBox Text="{Binding SubBar.Start, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding SubBar.Start, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate>
-                    </DataGridTemplateColumn.CellEditingTemplate>
+                    <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="{Binding SubBar.Start, StringFormat=MM/dd, TargetNullValue=''}"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, ElementName=RootWindow}" Value="True"><Setter Property="Text" Value="{Binding SubBar.Start, StringFormat='MM/dd HH:mm', TargetNullValue=''}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><TextBox Text="{Binding SubBar.Start, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, ElementName=RootWindow}" Value="True"><Setter Property="Text" Value="{Binding SubBar.Start, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
-
+                
                 <DataGridTemplateColumn Header="後終了" Width="85">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate><TextBlock VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="{Binding SubBar.End, StringFormat=MM/dd, TargetNullValue=''}"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding SubBar.End, StringFormat='MM/dd HH:mm', TargetNullValue=''}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                    <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate><TextBox Text="{Binding SubBar.End, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Text" Value="{Binding SubBar.End, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate>
-                    </DataGridTemplateColumn.CellEditingTemplate>
+                    <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="{Binding SubBar.End, StringFormat=MM/dd, TargetNullValue=''}"/><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, ElementName=RootWindow}" Value="True"><Setter Property="Text" Value="{Binding SubBar.End, StringFormat='MM/dd HH:mm', TargetNullValue=''}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><TextBox Text="{Binding SubBar.End, StringFormat=MM/dd, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"><TextBox.Style><Style TargetType="TextBox"><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsHourlyMode, ElementName=RootWindow}" Value="True"><Setter Property="Text" Value="{Binding SubBar.End, StringFormat='MM/dd HH:mm', UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
                 <DataGridTemplateColumn Header="後色" Width="55">
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate><ComboBox ItemsSource="{Binding DataContext.AvailableBarColors, RelativeSource={RelativeSource AncestorType=DataGrid}}" SelectedItem="{Binding SubBar.ColorName, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent"/></DataTemplate>
+                        <DataTemplate>
+                            <ComboBox ItemsSource="{Binding DataContext.AvailableBarColors, ElementName=RootWindow}" SelectedItem="{Binding SubBar.ColorName, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent"/>
+                        </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTextColumn Header="先行" Binding="{Binding PredecessorId, UpdateSourceTrigger=PropertyChanged}" Width="40"/>
+                <DataGridTemplateColumn Header="線色" Width="55">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ComboBox ItemsSource="{Binding DataContext.AvailableLineColors, ElementName=RootWindow}" SelectedItem="{Binding LineColorName, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTextColumn Header="先行" Binding="{Binding PredecessorId}" Width="40"/>
             </DataGrid.Columns>
         </DataGrid>
 
         <GridSplitter Grid.Row="1" Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="#DDDDDD"/>
 
         <ScrollViewer x:Name="GanttScrollViewer" Grid.Row="1" Grid.Column="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="#FAFAFA" ScrollChanged="GanttScrollViewer_ScrollChanged">
-            <Grid HorizontalAlignment="Left" VerticalAlignment="Top" MouseLeftButtonDown="ChartBackground_MouseLeftButtonDown">
+            <Grid HorizontalAlignment="Left" VerticalAlignment="Top" Background="Transparent" MouseLeftButtonDown="ChartBackground_MouseLeftButtonDown">
                 
                 <ItemsControl ItemsSource="{Binding HolidayBands}">
                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas Width="{Binding DataContext.ChartWidth, ElementName=RootWindow}" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
@@ -190,28 +163,14 @@
                         <DataTemplate>
                             <Canvas>
                                 <Border Canvas.Left="{Binding MainBar.GhostLeft}" Canvas.Top="{Binding Top}" Width="{Binding MainBar.GhostWidth}" Height="{Binding BarHeight}" Background="{Binding MainBar.Brush}" Visibility="{Binding MainBar.GhostVisibility}" Opacity="0.3" CornerRadius="2" />
-                                
                                 <Border Canvas.Left="{Binding MainBar.Left}" Canvas.Top="{Binding Top}" Width="{Binding MainBar.Width}" Height="{Binding BarHeight}" Background="{Binding MainBar.Brush}" Visibility="{Binding MainBar.Visibility}" Opacity="{Binding BarOpacity}" CornerRadius="2" Cursor="SizeAll" ClipToBounds="True" Tag="MainBar" MouseLeftButtonDown="Bar_MouseLeftButtonDown" MouseMove="Bar_MouseMove" MouseLeftButtonUp="Bar_MouseLeftButtonUp">
                                     <Border.Effect><DropShadowEffect BlurRadius="3" ShadowDepth="1" Opacity="0.2"/></Border.Effect>
-                                    <Grid>
-                                        <Rectangle Fill="#50000000" Width="{Binding ProgressWidth}" HorizontalAlignment="Left"/>
-                                        <TextBlock Text="{Binding Name}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="11" IsHitTestVisible="False">
-                                            <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding IsGroup}" Value="True"><Setter Property="Visibility" Value="Hidden"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-                                        </TextBlock>
-                                        <Border Width="8" HorizontalAlignment="Left" Background="Transparent" Cursor="SizeWE" Tag="MainBar" MouseLeftButtonDown="BarResizeLeft_MouseLeftButtonDown" MouseMove="Bar_MouseMove" MouseLeftButtonUp="Bar_MouseLeftButtonUp"/>
-                                        <Border Width="8" HorizontalAlignment="Right" Background="Transparent" Cursor="SizeWE" Tag="MainBar" MouseLeftButtonDown="BarResizeRight_MouseLeftButtonDown" MouseMove="Bar_MouseMove" MouseLeftButtonUp="Bar_MouseLeftButtonUp"/>
-                                    </Grid>
+                                    <Grid><Rectangle Fill="#50000000" Width="{Binding ProgressWidth}" HorizontalAlignment="Left"/><TextBlock Text="{Binding Name}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="11" IsHitTestVisible="False"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding IsGroup}" Value="True"><Setter Property="Visibility" Value="Hidden"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock><Border Width="8" HorizontalAlignment="Left" Background="Transparent" Cursor="SizeWE" Tag="MainBar" MouseLeftButtonDown="BarResizeLeft_MouseLeftButtonDown" MouseMove="Bar_MouseMove" MouseLeftButtonUp="Bar_MouseLeftButtonUp"/><Border Width="8" HorizontalAlignment="Right" Background="Transparent" Cursor="SizeWE" Tag="MainBar" MouseLeftButtonDown="BarResizeRight_MouseLeftButtonDown" MouseMove="Bar_MouseMove" MouseLeftButtonUp="Bar_MouseLeftButtonUp"/></Grid>
                                 </Border>
-
                                 <Border Canvas.Left="{Binding SubBar.GhostLeft}" Canvas.Top="{Binding Top}" Width="{Binding SubBar.GhostWidth}" Height="{Binding BarHeight}" Background="{Binding SubBar.Brush}" Visibility="{Binding SubBar.GhostVisibility}" Opacity="0.3" CornerRadius="2" />
-                                
                                 <Border Canvas.Left="{Binding SubBar.Left}" Canvas.Top="{Binding Top}" Width="{Binding SubBar.Width}" Height="{Binding BarHeight}" Background="{Binding SubBar.Brush}" Visibility="{Binding SubBar.Visibility}" Opacity="0.8" CornerRadius="2" BorderBrush="White" BorderThickness="1,0,1,0" Cursor="SizeAll" ClipToBounds="True" Tag="SubBar" MouseLeftButtonDown="Bar_MouseLeftButtonDown" MouseMove="Bar_MouseMove" MouseLeftButtonUp="Bar_MouseLeftButtonUp">
                                     <Border.Style><Style TargetType="Border"><Style.Triggers><DataTrigger Binding="{Binding IsGroup}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Border.Style>
-                                    <Grid>
-                                        <TextBlock Text="{Binding SubBar.Name}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" FontWeight="Normal" Opacity="0.9" IsHitTestVisible="False"/>
-                                        <Border Width="8" HorizontalAlignment="Left" Background="Transparent" Cursor="SizeWE" Tag="SubBar" MouseLeftButtonDown="BarResizeLeft_MouseLeftButtonDown" MouseMove="Bar_MouseMove" MouseLeftButtonUp="Bar_MouseLeftButtonUp"/>
-                                        <Border Width="8" HorizontalAlignment="Right" Background="Transparent" Cursor="SizeWE" Tag="SubBar" MouseLeftButtonDown="BarResizeRight_MouseLeftButtonDown" MouseMove="Bar_MouseMove" MouseLeftButtonUp="Bar_MouseLeftButtonUp"/>
-                                    </Grid>
+                                    <Grid><TextBlock Text="{Binding SubBar.Name}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" Opacity="0.9" IsHitTestVisible="False"/><Border Width="8" HorizontalAlignment="Left" Background="Transparent" Cursor="SizeWE" Tag="SubBar" MouseLeftButtonDown="BarResizeLeft_MouseLeftButtonDown" MouseMove="Bar_MouseMove" MouseLeftButtonUp="Bar_MouseLeftButtonUp"/><Border Width="8" HorizontalAlignment="Right" Background="Transparent" Cursor="SizeWE" Tag="SubBar" MouseLeftButtonDown="BarResizeRight_MouseLeftButtonDown" MouseMove="Bar_MouseMove" MouseLeftButtonUp="Bar_MouseLeftButtonUp"/></Grid>
                                 </Border>
                             </Canvas>
                         </DataTemplate>
@@ -220,28 +179,35 @@
 
                 <Canvas Width="{Binding DataContext.ChartWidth, ElementName=RootWindow}" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}" IsHitTestVisible="False">
                     <Rectangle Canvas.Left="{Binding TodayLeft}" Width="1" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}" Fill="Red" Opacity="0.5"/>
-                    <Path Stroke="Red" StrokeThickness="1.2" StrokeLineJoin="Round" Data="{Binding ProgressLinePath}" Opacity="0.9">
-                        <Path.Style><Style TargetType="Path"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding IsProgressLineVisible}" Value="False"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Path.Style>
-                        <Path.Effect><DropShadowEffect BlurRadius="3" ShadowDepth="0" Color="Red" Opacity="0.4"/></Path.Effect>
-                    </Path>
+                    <Path Stroke="Red" StrokeThickness="1.2" StrokeLineJoin="Round" Data="{Binding ProgressLinePath}" Opacity="0.9"><Path.Style><Style TargetType="Path"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding IsProgressLineVisible}" Value="False"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Path.Style><Path.Effect><DropShadowEffect BlurRadius="3" ShadowDepth="0" Color="Red" Opacity="0.4"/></Path.Effect></Path>
                 </Canvas>
                 
                 <ItemsControl ItemsSource="{Binding Notes}">
                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas Width="{Binding DataContext.ChartWidth, ElementName=RootWindow}" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Canvas.Left" Value="{Binding X}"/><Setter Property="Canvas.Top" Value="{Binding Y}"/></Style></ItemsControl.ItemContainerStyle>
-                    <ItemsControl.ItemTemplate><DataTemplate><Border Width="{Binding Width}" Height="{Binding Height}" Background="#FFFFE0" BorderBrush="#E0E080" BorderThickness="1" CornerRadius="3"><Border.Effect><DropShadowEffect BlurRadius="5" ShadowDepth="2" Opacity="0.2"/></Border.Effect><Grid><TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" Background="Transparent" BorderThickness="0" Padding="5,15,5,10" FontSize="12"/><Border Height="15" VerticalAlignment="Top" Background="#10000000" Cursor="SizeAll" MouseLeftButtonDown="Note_MouseLeftButtonDown" MouseMove="Note_MouseMove" MouseLeftButtonUp="Note_MouseLeftButtonUp"><Border.ContextMenu><ContextMenu><MenuItem Header="削除" Click="DeleteNote_Click"/></ContextMenu></Border.ContextMenu></Border><Border Width="12" Height="12" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="Transparent" Cursor="SizeNWSE" MouseLeftButtonDown="NoteResize_MouseLeftButtonDown" MouseMove="NoteResize_MouseMove" MouseLeftButtonUp="NoteResize_MouseLeftButtonUp"><Path Data="M 12,0 L 12,12 L 0,12 Z" Fill="#40000000" IsHitTestVisible="False"/></Border></Grid></Border></DataTemplate></ItemsControl.ItemTemplate>
+                    <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Canvas.Left" Value="0"/><Setter Property="Canvas.Top" Value="0"/></Style></ItemsControl.ItemContainerStyle>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Canvas>
+                                <Path Data="{Binding TailPathData}" Fill="#FFFFE0" Stroke="#E0E080" StrokeThickness="1" Visibility="{Binding CalloutVisibility}" MouseLeftButtonDown="NoteTail_MouseLeftButtonDown"><Path.Effect><DropShadowEffect BlurRadius="5" ShadowDepth="2" Opacity="0.2"/></Path.Effect></Path>
+                                <Border Canvas.Left="{Binding X}" Canvas.Top="{Binding Y}" Width="{Binding Width}" Height="{Binding Height}" Background="#FFFFE0" BorderBrush="#E0E080" BorderThickness="1" CornerRadius="3" MouseLeftButtonDown="NoteBorder_MouseLeftButtonDown">
+                                    <Border.Effect><DropShadowEffect BlurRadius="5" ShadowDepth="2" Opacity="0.2"/></Border.Effect>
+                                    <Grid>
+                                        <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" Background="Transparent" BorderThickness="0" Padding="5,15,5,10" FontSize="12" GotFocus="NoteTextBox_GotFocus"/>
+                                        <Border Height="15" VerticalAlignment="Top" Background="#10000000" Cursor="SizeAll" MouseLeftButtonDown="Note_MouseLeftButtonDown" MouseMove="Note_MouseMove" MouseLeftButtonUp="Note_MouseLeftButtonUp"><Border.ContextMenu><ContextMenu><MenuItem Header="吹き出し切替" Click="ToggleCallout_Click"/><Separator/><MenuItem Header="削除" Click="DeleteNote_Click" Foreground="Red"/></ContextMenu></Border.ContextMenu></Border>
+                                        <Border Width="12" Height="12" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="Transparent" Cursor="SizeNWSE" MouseLeftButtonDown="NoteResize_MouseLeftButtonDown" MouseMove="NoteResize_MouseMove" MouseLeftButtonUp="NoteResize_MouseLeftButtonUp"><Path Data="M 12,0 L 12,12 L 0,12 Z" Fill="#40000000" IsHitTestVisible="False"/></Border>
+                                    </Grid>
+                                </Border>
+                                <Ellipse Canvas.Left="{Binding TargetX}" Canvas.Top="{Binding TargetY}" Width="12" Height="12" Margin="-6,-6,0,0" Fill="DarkOrange" Opacity="0.6" Cursor="Cross" MouseLeftButtonDown="NoteTarget_MouseLeftButtonDown" MouseMove="NoteTarget_MouseMove" MouseLeftButtonUp="NoteTarget_MouseLeftButtonUp"><Ellipse.Style><Style TargetType="Ellipse"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding IsCallout}" Value="True"/><Condition Binding="{Binding IsSelected}" Value="True"/></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible"/></MultiDataTrigger></Style.Triggers></Style></Ellipse.Style></Ellipse>
+                            </Canvas>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </Grid>
         </ScrollViewer>
 
         <Border Grid.Row="1" Grid.Column="2" HorizontalAlignment="Right" Width="280" Background="#FFFFFF" BorderBrush="#DDDDDD" BorderThickness="1,0,0,0">
             <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding MemoTask}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Border.Style>
-            <Border.Effect><DropShadowEffect BlurRadius="10" ShadowDepth="-2" Opacity="0.1"/></Border.Effect>
-            <Grid>
-                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-                <Border Background="#F5F5F5" Padding="10"><TextBlock Text="{Binding MemoTask.Name, StringFormat='📝 {0}'}" FontWeight="Bold" Foreground="#333333" FontSize="14" TextTrimming="CharacterEllipsis"/></Border>
-                <TextBox Grid.Row="1" Text="{Binding MemoTask.Memo, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Background="White" BorderThickness="0" Padding="12" FontSize="13"/>
-            </Grid>
+            <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions><Border Background="#F5F5F5" Padding="10"><TextBlock Text="{Binding MemoTask.Name, StringFormat='📝 {0}'}" FontWeight="Bold" FontSize="14" TextTrimming="CharacterEllipsis"/></Border><TextBox Grid.Row="1" Text="{Binding MemoTask.Memo, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Padding="12" FontSize="13"/></Grid>
         </Border>
     </Grid>
 </Window>

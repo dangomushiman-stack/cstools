@@ -1,0 +1,138 @@
+{
+  "Tasks": [
+    {
+      "Id": "43b2",
+      "Name": "apiXX.txt",
+      "Assignee": "",
+      "Memo": "",
+      "IsGroup": false,
+      "IndentLevel": 0,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "Tomato",
+        "Start": "2026-04-02T00:00:00",
+        "End": "2026-04-04T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
+      "Progress": 0,
+      "PredecessorId": "",
+      "RowIndex": 0,
+      "LineColorName": "DarkOrange"
+    },
+    {
+      "Id": "a40d",
+      "Name": "apicmp\u30D7\u30ED\u30BB\u30B9",
+      "Assignee": "",
+      "Memo": "",
+      "IsGroup": false,
+      "IndentLevel": 0,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-05T00:00:00",
+        "End": "2026-04-08T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
+      "Progress": 0,
+      "PredecessorId": "43b2",
+      "RowIndex": 1,
+      "LineColorName": "DarkOrange"
+    },
+    {
+      "Id": "7b15",
+      "Name": "apidbm",
+      "Assignee": "",
+      "Memo": "",
+      "IsGroup": false,
+      "IndentLevel": 0,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "MediumPurple",
+        "Start": "2026-04-09T00:00:00",
+        "End": "2026-04-11T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
+      "Progress": 0,
+      "PredecessorId": "a40d",
+      "RowIndex": 2,
+      "LineColorName": "DarkOrange"
+    },
+    {
+      "Id": "409c",
+      "Name": "ApiInit()",
+      "Assignee": "",
+      "Memo": "",
+      "IsGroup": false,
+      "IndentLevel": 0,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-12T00:00:00",
+        "End": "2026-04-14T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
+      "Progress": 0,
+      "PredecessorId": "7b15",
+      "RowIndex": 3,
+      "LineColorName": "DarkOrange"
+    }
+  ],
+  "Notes": [
+    {
+      "Text": "\u30AA\u30EC\u30F3\u30B8\u306F\u5B9A\u7FA9\u30D5\u30A1\u30A4\u30EB\r\n\u9752\u306F\u51E6\u7406\r\n\u7D2B\u306F\u30C7\u30FC\u30BF",
+      "X": 16,
+      "Y": 146,
+      "Width": 143,
+      "Height": 75,
+      "IsCallout": false,
+      "TargetX": 50,
+      "TargetY": 150
+    },
+    {
+      "Text": "startdmn\u6642\u306B\u5B9F\u884C\u3055\u308C\u308B",
+      "X": 294,
+      "Y": 37,
+      "Width": 148,
+      "Height": 48,
+      "IsCallout": true,
+      "TargetX": 271,
+      "TargetY": 88
+    },
+    {
+      "Text": "\u30B0\u30ED\u30FC\u30D0\u30EB\u5909\u6570",
+      "X": 426,
+      "Y": 95,
+      "Width": 101,
+      "Height": 48,
+      "IsCallout": true,
+      "TargetX": 398,
+      "TargetY": 125
+    }
+  ],
+  "ProjectStartDate": "2026-04-01T00:00:00",
+  "DisplayDays": 30,
+  "IsProgressLineVisible": false,
+  "IsWorkDayAdjustmentEnabled": false,
+  "IntervalTicks": 864000000000,
+  "IsSnapToDay": false
+}
