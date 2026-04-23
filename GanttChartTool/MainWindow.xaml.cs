@@ -12,6 +12,7 @@ namespace GanttChartTool
         private bool _isResizingLeft = false, _isResizingRight = false, _isDraggingNote = false, _isResizingNote = false, _isDraggingNoteTarget = false, _isSync = false;
         private Point _dragStartPos; private object? _dragTarget = null;
         private double _origX, _origY, _origWidth, _origHeight;
+        private DateTime _origTime, _origTargetTime; // ★ドラッグ開始時の時間位置を記憶するための変数
         private ScrollViewer? _dgScroll;
 
         public MainWindow() { InitializeComponent(); this.DataContext = new MainViewModel(); }
@@ -58,7 +59,6 @@ namespace GanttChartTool
 
         private void Bar_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) { if (_dragTarget is BarItem bar) { bar.Release(); _isResizingLeft = _isResizingRight = false; ((FrameworkElement)sender).ReleaseMouseCapture(); _dragTarget = null; if (this.DataContext is MainViewModel vm) { vm.SuspendUpdates = false; vm.UpdateAll(); } } }
 
-        // ★背景クリックで選択解除
         private void ChartBackground_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.OriginalSource is Canvas || e.OriginalSource is Grid || e.OriginalSource is ScrollViewer || e.OriginalSource is Border)
@@ -68,23 +68,88 @@ namespace GanttChartTool
             }
         }
 
-        // --- メモ（Note） ---
+        // --- メモ（Note）のドラッグ処理を時間ベースに更新 ---
+
         private void NoteTextBox_GotFocus(object sender, RoutedEventArgs e) { if (sender is TextBox tb && tb.DataContext is NoteItem note) ((MainViewModel)this.DataContext).SelectNote(note); }
         private void NoteTail_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { if (sender is FrameworkElement el && el.DataContext is NoteItem note) { ((MainViewModel)this.DataContext).SelectNote(note); e.Handled = true; } }
         private void NoteBorder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { if (sender is FrameworkElement el && el.DataContext is NoteItem note) { if (!(e.OriginalSource is TextBox)) { ((MainViewModel)this.DataContext).SelectNote(note); e.Handled = true; } } }
-        private void Note_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { if (sender is FrameworkElement el && el.DataContext is NoteItem note) { ((MainViewModel)this.DataContext).SelectNote(note); _isDraggingNote = true; _dragTarget = note; _dragStartPos = e.GetPosition(null); _origX = note.X; _origY = note.Y; el.CaptureMouse(); e.Handled = true; } }
-        private void Note_MouseMove(object sender, MouseEventArgs e) { if (_isDraggingNote && _dragTarget is NoteItem note) { var cur = e.GetPosition(null); note.X = _origX + (cur.X - _dragStartPos.X); note.Y = _origY + (cur.Y - _dragStartPos.Y); } }
+        
+        private void Note_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) 
+        { 
+            if (sender is FrameworkElement el && el.DataContext is NoteItem note) 
+            { 
+                ((MainViewModel)this.DataContext).SelectNote(note); 
+                _isDraggingNote = true; _dragTarget = note; _dragStartPos = e.GetPosition(null); 
+                _origTime = note.TimePosition; // ★開始時の時間を記憶
+                _origY = note.Y; 
+                el.CaptureMouse(); e.Handled = true; 
+            } 
+        }
+        
+        private void Note_MouseMove(object sender, MouseEventArgs e) 
+        { 
+            if (_isDraggingNote && _dragTarget is NoteItem note && this.DataContext is MainViewModel vm) 
+            { 
+                var cur = e.GetPosition(null);
+                double dx = cur.X - _dragStartPos.X;
+                // ピクセル移動量を今のスケールでの時間差分に変換
+                TimeSpan diff = TimeSpan.FromTicks((long)(vm.SelectedInterval.TimeSpan.Ticks * (dx / GanttSettings.DayWidth)));
+                
+                note.TimePosition = _origTime.Add(diff); // ★時間位置を更新
+                note.Y = _origY + (cur.Y - _dragStartPos.Y); 
+            } 
+        }
+
         private void Note_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) { if (_isDraggingNote) { _isDraggingNote = false; ((FrameworkElement)sender).ReleaseMouseCapture(); _dragTarget = null; } }
+        
         private void NoteResize_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { if (sender is FrameworkElement el && el.DataContext is NoteItem note) { ((MainViewModel)this.DataContext).SelectNote(note); _isResizingNote = true; _dragTarget = note; _dragStartPos = e.GetPosition(null); _origWidth = note.Width; _origHeight = note.Height; el.CaptureMouse(); e.Handled = true; } }
         private void NoteResize_MouseMove(object sender, MouseEventArgs e) { if (_isResizingNote && _dragTarget is NoteItem note) { var cur = e.GetPosition(null); note.Width = Math.Max(80, _origWidth + (cur.X - _dragStartPos.X)); note.Height = Math.Max(40, _origHeight + (cur.Y - _dragStartPos.Y)); } }
         private void NoteResize_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) { if (_isResizingNote) { _isResizingNote = false; ((FrameworkElement)sender).ReleaseMouseCapture(); _dragTarget = null; } }
-        private void NoteTarget_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { if (sender is FrameworkElement el && el.DataContext is NoteItem note) { ((MainViewModel)this.DataContext).SelectNote(note); _isDraggingNoteTarget = true; _dragTarget = note; _dragStartPos = e.GetPosition(null); _origX = note.TargetX; _origY = note.TargetY; el.CaptureMouse(); e.Handled = true; } }
-        private void NoteTarget_MouseMove(object sender, MouseEventArgs e) { if (_isDraggingNoteTarget && _dragTarget is NoteItem note) { var cur = e.GetPosition(null); note.TargetX = _origX + (cur.X - _dragStartPos.X); note.TargetY = _origY + (cur.Y - _dragStartPos.Y); } }
+        
+        private void NoteTarget_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) 
+        { 
+            if (sender is FrameworkElement el && el.DataContext is NoteItem note) 
+            { 
+                ((MainViewModel)this.DataContext).SelectNote(note); 
+                _isDraggingNoteTarget = true; _dragTarget = note; _dragStartPos = e.GetPosition(null); 
+                _origTargetTime = note.TargetTimePosition; // ★ターゲットの時間を記憶
+                _origY = note.TargetY; 
+                el.CaptureMouse(); e.Handled = true; 
+            } 
+        }
+        
+        private void NoteTarget_MouseMove(object sender, MouseEventArgs e) 
+        { 
+            if (_isDraggingNoteTarget && _dragTarget is NoteItem note && this.DataContext is MainViewModel vm) 
+            { 
+                var cur = e.GetPosition(null);
+                double dx = cur.X - _dragStartPos.X;
+                TimeSpan diff = TimeSpan.FromTicks((long)(vm.SelectedInterval.TimeSpan.Ticks * (dx / GanttSettings.DayWidth)));
+                
+                note.TargetTimePosition = _origTargetTime.Add(diff); // ★ターゲットの時間位置を更新
+                note.TargetY = _origY + (cur.Y - _dragStartPos.Y); 
+            } 
+        }
+
         private void NoteTarget_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) { if (_isDraggingNoteTarget) { _isDraggingNoteTarget = false; ((FrameworkElement)sender).ReleaseMouseCapture(); _dragTarget = null; } }
 
-        private void ToggleCallout_Click(object sender, RoutedEventArgs e) { if (sender is MenuItem mi && mi.DataContext is NoteItem note) { ((MainViewModel)this.DataContext).SelectNote(note); note.IsCallout = !note.IsCallout; if (note.IsCallout) { note.TargetX = note.X - 20; note.TargetY = note.Y + note.Height + 30; note.RefreshTail(); } } }
+        private void ToggleCallout_Click(object sender, RoutedEventArgs e) 
+        { 
+            if (sender is MenuItem mi && mi.DataContext is NoteItem note) 
+            { 
+                ((MainViewModel)this.DataContext).SelectNote(note); 
+                note.IsCallout = !note.IsCallout; 
+                if (note.IsCallout) 
+                { 
+                    note.TargetTimePosition = note.TimePosition.AddDays(1); 
+                    note.TargetY = note.Y + note.Height + 30; 
+                    note.RefreshTail(); 
+                } 
+            } 
+        }
+
         private void AddNote_Click(object sender, RoutedEventArgs e) { ((MainViewModel)this.DataContext).AddNewNote(); }
-        private void AddCallout_Click(object sender, RoutedEventArgs e) { if (this.DataContext is MainViewModel vm) { var note = new NoteItem { Text = "吹き出しメモ", X = 200, Y = 100, IsCallout = true, TargetX = 100, TargetY = 150 }; note.RefreshTail(); vm.Notes.Add(note); vm.SelectNote(note); } }
+        private void AddCallout_Click(object sender, RoutedEventArgs e) { if (this.DataContext is MainViewModel vm) { var note = new NoteItem { Text = "吹き出しメモ", TimePosition = vm.ProjectStartDate.AddDays(1), TargetTimePosition = vm.ProjectStartDate.AddDays(2), TargetY = 200, IsCallout = true }; note.GetProjectStart = () => vm.ProjectStartDate; note.GetGridInterval = () => vm.SelectedInterval.TimeSpan; note.RefreshTail(); vm.Notes.Add(note); vm.SelectNote(note); } }
         private void DeleteNote_Click(object sender, RoutedEventArgs e) { if (sender is MenuItem mi && mi.DataContext is NoteItem note) ((MainViewModel)this.DataContext).DeleteNote(note); }
         private void AddTask_Click(object sender, RoutedEventArgs e) { ((MainViewModel)this.DataContext).AddNewTask(); }
         private void InsertAbove_Click(object sender, RoutedEventArgs e) { if (MainDataGrid.SelectedItem is TaskItem t) ((MainViewModel)this.DataContext).InsertTaskAbove(t); }

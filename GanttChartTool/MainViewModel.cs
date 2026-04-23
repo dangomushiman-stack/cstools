@@ -130,36 +130,20 @@ namespace GanttChartTool
         
         public void OnTaskBarClicked(TaskItem clickedTask) 
         { 
-            // ★修正：ClearSelection() を呼ぶと結線の記憶も消えるため、メモの選択状態だけを個別に解除する
             foreach (var note in Notes) note.IsSelected = false; 
-            
             DataGridSelectedTask = clickedTask; 
             SelectedTask = clickedTask; 
-            MemoTask = null; // メモ表示を閉じる
-            
+            MemoTask = null; 
             if (IsLinkMode) 
             { 
-                if (_sourceTaskForLink == null) 
-                { 
-                    _sourceTaskForLink = clickedTask; 
-                    _sourceTaskForLink.IsSelected = true; 
-                } 
-                else if (_sourceTaskForLink == clickedTask) 
-                { 
-                    _sourceTaskForLink.IsSelected = false; 
-                    _sourceTaskForLink = null; 
-                } 
+                if (_sourceTaskForLink == null) { _sourceTaskForLink = clickedTask; _sourceTaskForLink.IsSelected = true; } 
+                else if (_sourceTaskForLink == clickedTask) { _sourceTaskForLink.IsSelected = false; _sourceTaskForLink = null; } 
                 else 
                 { 
                     var currentIds = string.IsNullOrWhiteSpace(clickedTask.PredecessorId) ? new List<string>() : clickedTask.PredecessorId.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList(); 
-                    if (currentIds.Contains(_sourceTaskForLink.Id)) 
-                        currentIds.Remove(_sourceTaskForLink.Id); 
-                    else 
-                        currentIds.Add(_sourceTaskForLink.Id); 
-                        
+                    if (currentIds.Contains(_sourceTaskForLink.Id)) currentIds.Remove(_sourceTaskForLink.Id); else currentIds.Add(_sourceTaskForLink.Id); 
                     clickedTask.PredecessorId = string.Join(", ", currentIds); 
-                    _sourceTaskForLink.IsSelected = false; 
-                    _sourceTaskForLink = null; 
+                    _sourceTaskForLink.IsSelected = false; _sourceTaskForLink = null; 
                 } 
                 UpdateAll(); 
             } 
@@ -177,7 +161,17 @@ namespace GanttChartTool
         }
         
         public void AddNewTask() { var newTask = new TaskItem(UpdateAll, () => ProjectStartDate, () => SelectedInterval.TimeSpan) { Id = Guid.NewGuid().ToString().Substring(0, 4), Name = "新規タスク", MainBar = { Start = ProjectStartDate.AddHours(9), End = ProjectStartDate.AddHours(17) } }; Tasks.Add(newTask); RefreshRowIndices(); UpdateAll(); }
-        public void AddNewNote() { var note = new NoteItem { X = 50, Y = 50 }; Notes.Add(note); SelectNote(note); }
+        
+        // ★メモ追加時も基準情報を教えてあげるように修正
+        public void AddNewNote() 
+        { 
+            var note = new NoteItem { TimePosition = ProjectStartDate.AddHours(12) };
+            note.GetProjectStart = () => ProjectStartDate;
+            note.GetGridInterval = () => SelectedInterval.TimeSpan;
+            Notes.Add(note); 
+            SelectNote(note); 
+        }
+        
         public void DeleteNote(NoteItem note) { if (note != null) Notes.Remove(note); }
         public void InsertTaskAbove(TaskItem target) { if (target != null) InsertTaskAt(Tasks.IndexOf(target), target.IndentLevel); }
         public void InsertTaskBelow(TaskItem target) { if (target != null) InsertTaskAt(Tasks.IndexOf(target) + 1, target.IndentLevel); }
@@ -194,7 +188,9 @@ namespace GanttChartTool
             HolidayBands.Clear(); DateTime current = ProjectStartDate.Date, end = ProjectStartDate.Add(TimeSpan.FromTicks(SelectedInterval.TimeSpan.Ticks * DisplayDays));
             while (current <= end.Date.AddDays(1)) { if (current.DayOfWeek == DayOfWeek.Saturday || current.DayOfWeek == DayOfWeek.Sunday) { double left = ((current - ProjectStartDate).TotalHours / SelectedInterval.TimeSpan.TotalHours) * GanttSettings.DayWidth, width = (((current.AddDays(1) - ProjectStartDate).TotalHours / SelectedInterval.TimeSpan.TotalHours) * GanttSettings.DayWidth) - left; if (left + width > 0 && left < ChartWidth) HolidayBands.Add(new HolidayBand { Left = left, Width = width, BackgroundColor = current.DayOfWeek == DayOfWeek.Saturday ? Brushes.AliceBlue : Brushes.MistyRose }); } current = current.AddDays(1); }
             UpdateGroups(); UpdateDependencies(); UpdateHighlight(); UpdateProgressLine();
-            foreach (var t in Tasks) t.RefreshDisplay(); foreach (var n in Notes) n.RefreshTail();
+            foreach (var t in Tasks) t.RefreshDisplay(); 
+            // ★画面更新（単位変更時など）にすべてのメモを再計算
+            foreach (var n in Notes) n.RefreshDisplay();
             OnPropertyChanged(nameof(ChartHeight)); OnPropertyChanged(nameof(ChartWidth)); OnPropertyChanged(nameof(TodayLeft));
         }
 
@@ -216,6 +212,34 @@ namespace GanttChartTool
         private void HighlightSuccessors(TaskItem task) { var successors = Tasks.Where(t => !string.IsNullOrWhiteSpace(t.PredecessorId) && t.PredecessorId.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Contains(task.Id)); foreach (var suc in successors) { if (!suc.IsRelevant) { suc.IsRelevant = true; HighlightSuccessors(suc); } } }
 
         public void SaveToFile(string filePath) { var data = new ProjectSaveData { Tasks = Tasks, Notes = Notes, ProjectStartDate = ProjectStartDate, DisplayDays = DisplayDays, IsProgressLineVisible = IsProgressLineVisible, IsWorkDayAdjustmentEnabled = IsWorkDayAdjustmentEnabled, IntervalTicks = SelectedInterval.TimeSpan.Ticks, IsSnapToDay = IsSnapToDay }; File.WriteAllText(filePath, JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true })); CurrentFilePath = filePath; }
-        public void LoadFromFile(string filePath) { if (!File.Exists(filePath)) return; try { var data = JsonSerializer.Deserialize<ProjectSaveData>(File.ReadAllText(filePath), new JsonSerializerOptions { NumberHandling = JsonNumberHandling.AllowReadingFromString }); if (data != null) { ProjectStartDate = data.ProjectStartDate; DisplayDays = data.DisplayDays; IsProgressLineVisible = data.IsProgressLineVisible; IsWorkDayAdjustmentEnabled = data.IsWorkDayAdjustmentEnabled; IsSnapToDay = data.IsSnapToDay; SelectedInterval = IntervalOptions.FirstOrDefault(x => x.TimeSpan.Ticks == data.IntervalTicks) ?? IntervalOptions[4]; Tasks.Clear(); foreach (var t in data.Tasks) { t.SetReferences(UpdateAll, () => ProjectStartDate, () => SelectedInterval.TimeSpan); t.MigrateOldData(); Tasks.Add(t); } Notes.Clear(); if (data.Notes != null) foreach (var n in data.Notes) Notes.Add(n); RefreshRowIndices(); UpdateAll(); CurrentFilePath = filePath; } } catch (Exception ex) { MessageBox.Show($"エラー: {ex.Message}"); } }
+        
+        public void LoadFromFile(string filePath) 
+        { 
+            if (!File.Exists(filePath)) return; 
+            try 
+            { 
+                var data = JsonSerializer.Deserialize<ProjectSaveData>(File.ReadAllText(filePath), new JsonSerializerOptions { NumberHandling = JsonNumberHandling.AllowReadingFromString }); 
+                if (data != null) 
+                { 
+                    ProjectStartDate = data.ProjectStartDate; DisplayDays = data.DisplayDays; IsProgressLineVisible = data.IsProgressLineVisible; IsWorkDayAdjustmentEnabled = data.IsWorkDayAdjustmentEnabled; IsSnapToDay = data.IsSnapToDay; 
+                    SelectedInterval = IntervalOptions.FirstOrDefault(x => x.TimeSpan.Ticks == data.IntervalTicks) ?? IntervalOptions[4]; 
+                    
+                    Tasks.Clear(); foreach (var t in data.Tasks) { t.SetReferences(UpdateAll, () => ProjectStartDate, () => SelectedInterval.TimeSpan); t.MigrateOldData(); Tasks.Add(t); } 
+                    
+                    // ★読込時もメモの基準情報をセットする
+                    Notes.Clear(); 
+                    if (data.Notes != null) 
+                    {
+                        foreach (var n in data.Notes) 
+                        {
+                            n.GetProjectStart = () => ProjectStartDate;
+                            n.GetGridInterval = () => SelectedInterval.TimeSpan;
+                            Notes.Add(n);
+                        }
+                    }
+                    RefreshRowIndices(); UpdateAll(); CurrentFilePath = filePath; 
+                } 
+            } catch (Exception ex) { MessageBox.Show($"エラー: {ex.Message}"); } 
+        }
     }
 }

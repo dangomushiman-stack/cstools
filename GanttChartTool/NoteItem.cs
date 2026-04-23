@@ -7,31 +7,50 @@ namespace GanttChartTool
     public class NoteItem : ViewModelBase
     {
         public NoteItem() { }
-        
+
+        [JsonIgnore] public Func<DateTime>? GetProjectStart;
+        [JsonIgnore] public Func<TimeSpan>? GetGridInterval;
+
         private string _text = "新しいメモ";
         public string Text { get => _text; set { _text = value; OnPropertyChanged(); } }
-        
-        private double _x = 100, _y = 50, _width = 150, _height = 80;
-        public double X { get => _x; set { _x = value; OnPropertyChanged(); RefreshTail(); } }
-        public double Y { get => _y; set { _y = value; OnPropertyChanged(); RefreshTail(); } }
-        public double Width { get => _width; set { _width = value; OnPropertyChanged(); RefreshTail(); } }
-        public double Height { get => _height; set { _height = value; OnPropertyChanged(); RefreshTail(); } }
+
+        private DateTime _timePosition = DateTime.Now;
+        public DateTime TimePosition { get => _timePosition; set { _timePosition = value; OnPropertyChanged(); RefreshDisplay(); } }
+
+        private DateTime _targetTimePosition = DateTime.Now.AddDays(1);
+        public DateTime TargetTimePosition { get => _targetTimePosition; set { _targetTimePosition = value; OnPropertyChanged(); RefreshDisplay(); } }
+
+        [JsonIgnore] public double X => CalculateX(TimePosition);
+        [JsonIgnore] public double TargetX => CalculateX(TargetTimePosition);
+
+        private double _y = 50, _width = 150, _height = 80;
+        public double Y { get => _y; set { _y = value; OnPropertyChanged(); RefreshDisplay(); } }
+        public double Width { get => _width; set { _width = value; OnPropertyChanged(); RefreshDisplay(); } }
+        public double Height { get => _height; set { _height = value; OnPropertyChanged(); RefreshDisplay(); } }
+
+        // ★復活：しっぽのY座標（縦方向はピクセルのまま）
+        private double _targetY = 150;
+        public double TargetY { get => _targetY; set { _targetY = value; OnPropertyChanged(); RefreshDisplay(); } }
 
         private bool _isCallout = false, _isSelected = false;
         public bool IsCallout { get => _isCallout; set { _isCallout = value; OnPropertyChanged(); OnPropertyChanged(nameof(CalloutVisibility)); RefreshTail(); } }
         
-        [JsonIgnore] 
-        public bool IsSelected { get => _isSelected; set { _isSelected = value; OnPropertyChanged(); } }
+        [JsonIgnore] public bool IsSelected { get => _isSelected; set { _isSelected = value; OnPropertyChanged(); } }
+        [JsonIgnore] public Visibility CalloutVisibility => IsCallout ? Visibility.Visible : Visibility.Collapsed;
+        [JsonIgnore] public string TailPathData { get; private set; } = "";
 
-        private double _targetX = 50, _targetY = 150;
-        public double TargetX { get => _targetX; set { _targetX = value; OnPropertyChanged(); RefreshTail(); } }
-        public double TargetY { get => _targetY; set { _targetY = value; OnPropertyChanged(); RefreshTail(); } }
+        private double CalculateX(DateTime dt)
+        {
+            if (GetProjectStart == null || GetGridInterval == null) return 0;
+            return ((dt - GetProjectStart()).TotalHours / GetGridInterval().TotalHours) * GanttSettings.DayWidth;
+        }
 
-        [JsonIgnore] 
-        public Visibility CalloutVisibility => IsCallout ? Visibility.Visible : Visibility.Collapsed;
-        
-        [JsonIgnore] 
-        public string TailPathData { get; private set; } = "";
+        public void RefreshDisplay()
+        {
+            OnPropertyChanged(nameof(X));
+            OnPropertyChanged(nameof(TargetX));
+            RefreshTail();
+        }
 
         public void RefreshTail()
         {
