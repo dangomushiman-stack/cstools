@@ -145,7 +145,6 @@ namespace GanttChartTool
         public bool IsWorkDayAdjustmentEnabled { get; set; } = true;
         public bool IsHourlyMode { get; set; } = false;
         public long IntervalTicks { get; set; } = TimeSpan.FromDays(1).Ticks;
-        // ★新設：スナップ単位の設定を保存
         public bool IsSnapToDay { get; set; } = false; 
     }
 
@@ -280,7 +279,14 @@ namespace GanttChartTool
         public double Left { get; set; }
         public TimeSpan Interval { get; set; } 
         public string DayText => Interval.TotalDays < 1 ? Date.ToString("H:mm") : Date.ToString("MM/dd");
-        public Brush BackgroundColor => Interval.TotalDays < 1 ? Brushes.Transparent : ((Date.DayOfWeek == DayOfWeek.Saturday) ? Brushes.AliceBlue : (Date.DayOfWeek == DayOfWeek.Sunday) ? Brushes.MistyRose : Brushes.Transparent);
+    }
+
+    // ★追加：土日の背景帯を表すクラス。1日分の幅で描画される
+    public class HolidayBand
+    {
+        public double Left { get; set; }
+        public double Width { get; set; }
+        public Brush BackgroundColor { get; set; } = Brushes.Transparent;
     }
 
     public class MainViewModel : ViewModelBase
@@ -288,6 +294,7 @@ namespace GanttChartTool
         public ObservableCollection<TaskItem> Tasks { get; set; } = new();
         public ObservableCollection<NoteItem> Notes { get; set; } = new();
         public ObservableCollection<GridDayItem> GridDays { get; set; } = new();
+        public ObservableCollection<HolidayBand> HolidayBands { get; set; } = new(); // ★追加
         public ObservableCollection<DependencyLine> DependencyLines { get; set; } = new();
         
         public ObservableCollection<IntervalOption> IntervalOptions { get; } = new()
@@ -318,7 +325,6 @@ namespace GanttChartTool
 
         [JsonIgnore] public bool IsHourlyMode => SelectedInterval?.TimeSpan.TotalDays < 1;
 
-        // ★新設：スナップ単位の切り替え
         private bool _isSnapToDay = false;
         public bool IsSnapToDay { get => _isSnapToDay; set { _isSnapToDay = value; OnPropertyChanged(); } }
 
@@ -495,6 +501,29 @@ namespace GanttChartTool
                 var date = ProjectStartDate.Add(TimeSpan.FromTicks(SelectedInterval.TimeSpan.Ticks * i));
                 GridDays.Add(new GridDayItem { Date = date, Left = i * GanttSettings.DayWidth, Interval = SelectedInterval.TimeSpan });
             }
+
+            // ★変更：表示単位に関係なく「実際の1日分の幅」を計算して土日の帯を生成する
+            HolidayBands.Clear();
+            DateTime current = ProjectStartDate.Date;
+            DateTime end = ProjectStartDate.Add(TimeSpan.FromTicks(SelectedInterval.TimeSpan.Ticks * DisplayDays));
+
+            while (current <= end.Date.AddDays(1)) 
+            {
+                if (current.DayOfWeek == DayOfWeek.Saturday || current.DayOfWeek == DayOfWeek.Sunday)
+                {
+                    double left = ((current - ProjectStartDate).TotalHours / SelectedInterval.TimeSpan.TotalHours) * GanttSettings.DayWidth;
+                    double right = ((current.AddDays(1) - ProjectStartDate).TotalHours / SelectedInterval.TimeSpan.TotalHours) * GanttSettings.DayWidth;
+                    double width = right - left;
+
+                    // 画面内に少しでも入っていれば帯を追加
+                    if (right > 0 && left < ChartWidth) 
+                    {
+                        Brush bg = current.DayOfWeek == DayOfWeek.Saturday ? Brushes.AliceBlue : Brushes.MistyRose;
+                        HolidayBands.Add(new HolidayBand { Left = left, Width = width, BackgroundColor = bg });
+                    }
+                }
+                current = current.AddDays(1);
+            }
         }
 
         private void UpdateGroups() { for (int i = 0; i < Tasks.Count; i++) { if (i < Tasks.Count - 1) Tasks[i].IsGroup = Tasks[i + 1].IndentLevel > Tasks[i].IndentLevel; else Tasks[i].IsGroup = false; } }
@@ -557,7 +586,7 @@ namespace GanttChartTool
                 IsWorkDayAdjustmentEnabled = this.IsWorkDayAdjustmentEnabled,
                 IsHourlyMode = this.IsHourlyMode,
                 IntervalTicks = this.SelectedInterval.TimeSpan.Ticks,
-                IsSnapToDay = this.IsSnapToDay // ★保存
+                IsSnapToDay = this.IsSnapToDay
             };
             File.WriteAllText(filePath, JsonSerializer.Serialize(saveData, new JsonSerializerOptions { WriteIndented = true }));
             CurrentFilePath = filePath;
@@ -578,7 +607,7 @@ namespace GanttChartTool
                     DisplayDays = data.DisplayDays;
                     IsProgressLineVisible = data.IsProgressLineVisible;
                     IsWorkDayAdjustmentEnabled = data.IsWorkDayAdjustmentEnabled;
-                    IsSnapToDay = data.IsSnapToDay; // ★復元
+                    IsSnapToDay = data.IsSnapToDay;
                     
                     if (data.IntervalTicks > 0)
                     {

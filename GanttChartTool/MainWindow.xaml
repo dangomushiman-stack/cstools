@@ -65,7 +65,6 @@
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="5">
                 <TextBlock Text="表示単位:" VerticalAlignment="Center" Margin="0,0,5,0" FontSize="11" Foreground="Gray"/>
                 <ComboBox ItemsSource="{Binding IntervalOptions}" SelectedItem="{Binding SelectedInterval}" DisplayMemberPath="Name" Width="75" VerticalContentAlignment="Center"/>
-                
                 <CheckBox Content="1日単位でスナップ" IsChecked="{Binding IsSnapToDay}" VerticalAlignment="Center" Margin="10,0,0,0" FontSize="11"/>
             </StackPanel>
 
@@ -161,10 +160,10 @@
         <ScrollViewer x:Name="GanttScrollViewer" Grid.Row="1" Grid.Column="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="#FAFAFA" ScrollChanged="GanttScrollViewer_ScrollChanged">
             <Grid HorizontalAlignment="Left" VerticalAlignment="Top" MouseLeftButtonDown="ChartBackground_MouseLeftButtonDown">
                 
-                <ItemsControl ItemsSource="{Binding GridDays}">
+                <ItemsControl ItemsSource="{Binding HolidayBands}">
                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas Width="{Binding DataContext.ChartWidth, ElementName=RootWindow}" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Canvas.Left" Value="{Binding Left}"/></Style></ItemsControl.ItemContainerStyle>
-                    <ItemsControl.ItemTemplate><DataTemplate><Border Width="40" Background="{Binding BackgroundColor}" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}"/></DataTemplate></ItemsControl.ItemTemplate>
+                    <ItemsControl.ItemTemplate><DataTemplate><Border Width="{Binding Width}" Background="{Binding BackgroundColor}" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}"/></DataTemplate></ItemsControl.ItemTemplate>
                 </ItemsControl>
                 
                 <Canvas Width="{Binding DataContext.ChartWidth, ElementName=RootWindow}" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}" IsHitTestVisible="False">
