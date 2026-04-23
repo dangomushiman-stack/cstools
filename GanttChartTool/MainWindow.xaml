@@ -59,7 +59,12 @@
             
             <Border Width="1" Background="#DDDDDD" Margin="5,8"/>
             <ToggleButton Content="🔗 矢印モード" IsChecked="{Binding IsLinkMode}" Style="{StaticResource OrangeToggleStyle}"/>
-            <ToggleButton Content="⏱ 時間モード" IsChecked="{Binding IsHourlyMode}" Style="{StaticResource OrangeToggleStyle}"/>
+
+            <Border Width="1" Background="#DDDDDD" Margin="5,8"/>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="5">
+                <TextBlock Text="表示単位:" VerticalAlignment="Center" Margin="0,0,5,0" FontSize="11" Foreground="Gray"/>
+                <ComboBox ItemsSource="{Binding IntervalOptions}" SelectedItem="{Binding SelectedInterval}" DisplayMemberPath="Name" Width="75" VerticalContentAlignment="Center"/>
+            </StackPanel>
 
             <Border Width="1" Background="#DDDDDD" Margin="5,8"/>
             <CheckBox Content="イナズマ線" IsChecked="{Binding IsProgressLineVisible}" VerticalAlignment="Center" Margin="5" FontSize="11"/>
@@ -69,7 +74,7 @@
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="開始日:" VerticalAlignment="Center" Margin="5,0" FontSize="11" Foreground="Gray"/>
                 <DatePicker SelectedDate="{Binding ProjectStartDate, UpdateSourceTrigger=PropertyChanged}" Width="100"/>
-                <TextBlock Text="表示数:" VerticalAlignment="Center" Margin="10,0,5,0" FontSize="11" Foreground="Gray"/>
+                <TextBlock Text="マス数:" VerticalAlignment="Center" Margin="10,0,5,0" FontSize="11" Foreground="Gray"/>
                 <TextBox Text="{Binding DisplayDays, UpdateSourceTrigger=LostFocus}" Width="40" VerticalContentAlignment="Center" TextAlignment="Center"/>
             </StackPanel>
         </WrapPanel>

@@ -79,6 +79,12 @@ namespace GanttChartTool
         public double Height { get => _height; set { _height = value; OnPropertyChanged(); } }
     }
 
+    public class IntervalOption
+    {
+        public string Name { get; set; } = "";
+        public TimeSpan TimeSpan { get; set; }
+    }
+
     public class BarItem : ViewModelBase
     {
         private DateTime? _start, _end, _origStart, _origEnd;
@@ -87,8 +93,8 @@ namespace GanttChartTool
         private bool _isDragging;
 
         [JsonIgnore] public Func<DateTime>? GetProjectStart;
-        [JsonIgnore] public Func<bool>? GetIsHourlyMode;
-        [JsonIgnore] public Func<bool>? GetIsSelected; // ★親が選択中か知るための連絡網を追加
+        [JsonIgnore] public Func<TimeSpan>? GetGridInterval;
+        [JsonIgnore] public Func<bool>? GetIsSelected;
         [JsonIgnore] public Action? OnChanged;
 
         public string Name { get => _name; set { _name = value; OnPropertyChanged(); } }
@@ -101,7 +107,6 @@ namespace GanttChartTool
         [JsonIgnore] public DateTime? OriginalStart { get => _origStart; set { _origStart = value; Refresh(); } }
         [JsonIgnore] public DateTime? OriginalEnd { get => _origEnd; set { _origEnd = value; Refresh(); } }
 
-        // ★選択中なら強制的にオレンジ色（DarkOrange）にする
         [JsonIgnore] public Brush Brush { get { if (GetIsSelected?.Invoke() == true) return Brushes.DarkOrange; try { return (Brush)new BrushConverter().ConvertFromString(ColorName)!; } catch { return Brushes.SteelBlue; } } }
         
         [JsonIgnore] public Visibility Visibility => (Start.HasValue && End.HasValue) ? Visibility.Visible : Visibility.Collapsed;
@@ -112,18 +117,18 @@ namespace GanttChartTool
         [JsonIgnore] public double GhostLeft => CalculateX(OriginalStart);
         [JsonIgnore] public double GhostWidth => CalculateWidth(OriginalStart, OriginalEnd);
 
-        private double CalculateX(DateTime? dt) => (dt == null || GetProjectStart == null) ? 0 : 
-            ((GetIsHourlyMode?.Invoke() ?? false) ? (dt.Value - GetProjectStart()).TotalHours : (dt.Value - GetProjectStart()).TotalDays) * GanttSettings.DayWidth;
+        private double CalculateX(DateTime? dt) => (dt == null || GetProjectStart == null || GetGridInterval == null) ? 0 : 
+            ((dt.Value - GetProjectStart()).TotalHours / GetGridInterval().TotalHours) * GanttSettings.DayWidth;
 
-        private double CalculateWidth(DateTime? s, DateTime? e) => (s == null || e == null) ? 0 : 
-            Math.Max(0, ((GetIsHourlyMode?.Invoke() ?? false) ? (e.Value - s.Value).TotalHours : (e.Value - s.Value).TotalDays) * GanttSettings.DayWidth);
+        private double CalculateWidth(DateTime? s, DateTime? e) => (s == null || e == null || GetGridInterval == null) ? 0 : 
+            Math.Max(0, ((e.Value - s.Value).TotalHours / GetGridInterval().TotalHours) * GanttSettings.DayWidth);
 
         public void Refresh() 
         { 
             OnPropertyChanged(nameof(Left)); OnPropertyChanged(nameof(Width)); 
             OnPropertyChanged(nameof(GhostLeft)); OnPropertyChanged(nameof(GhostWidth)); 
             OnPropertyChanged(nameof(Visibility)); OnPropertyChanged(nameof(GhostVisibility));
-            OnPropertyChanged(nameof(Brush)); // ★色が変わるかもしれないので通知
+            OnPropertyChanged(nameof(Brush)); 
         }
 
         public void Snapshot() { OriginalStart = Start; OriginalEnd = End; IsDragging = true; }
@@ -139,23 +144,24 @@ namespace GanttChartTool
         public bool IsProgressLineVisible { get; set; } = true;
         public bool IsWorkDayAdjustmentEnabled { get; set; } = true;
         public bool IsHourlyMode { get; set; } = false;
+        public long IntervalTicks { get; set; } = TimeSpan.FromDays(1).Ticks;
     }
 
     public class TaskItem : ViewModelBase
     {
         private Action? _onUpdate;
         public TaskItem() { }
-        public TaskItem(Action onUpdate, Func<DateTime> getProjectStart, Func<bool> getIsHourlyMode) 
+        public TaskItem(Action onUpdate, Func<DateTime> getProjectStart, Func<TimeSpan> getGridInterval) 
         { 
-            SetReferences(onUpdate, getProjectStart, getIsHourlyMode);
+            SetReferences(onUpdate, getProjectStart, getGridInterval);
         }
 
-        public void SetReferences(Action onUpdate, Func<DateTime> getProjectStart, Func<bool> getIsHourlyMode)
+        public void SetReferences(Action onUpdate, Func<DateTime> getProjectStart, Func<TimeSpan> getGridInterval)
         {
             _onUpdate = onUpdate;
             MainBar.GetProjectStart = SubBar.GetProjectStart = getProjectStart;
-            MainBar.GetIsHourlyMode = SubBar.GetIsHourlyMode = getIsHourlyMode;
-            MainBar.GetIsSelected = SubBar.GetIsSelected = () => IsSelected; // ★部品に連絡網を渡す
+            MainBar.GetGridInterval = SubBar.GetGridInterval = getGridInterval;
+            MainBar.GetIsSelected = SubBar.GetIsSelected = () => IsSelected;
             MainBar.OnChanged = SubBar.OnChanged = onUpdate;
         }
 
@@ -232,7 +238,6 @@ namespace GanttChartTool
         private string _lineColorName = "DarkOrange";
         public string LineColorName { get => _lineColorName; set { _lineColorName = value; OnPropertyChanged(); _onUpdate?.Invoke(); } }
 
-        // ★選択フラグが変わったら、自分の中のバーにも再描画（色の更新）を指示する
         [JsonIgnore] public bool IsSelected { get => _isSelected; set { _isSelected = value; OnPropertyChanged(); MainBar.Refresh(); SubBar.Refresh(); } }
         private bool _isSelected;
         
@@ -271,9 +276,9 @@ namespace GanttChartTool
     {
         public DateTime Date { get; set; }
         public double Left { get; set; }
-        public bool IsHourly { get; set; }
-        public string DayText => IsHourly ? Date.ToString("H:mm") : Date.ToString("MM/dd");
-        public Brush BackgroundColor => IsHourly ? Brushes.Transparent : ((Date.DayOfWeek == DayOfWeek.Saturday) ? Brushes.AliceBlue : (Date.DayOfWeek == DayOfWeek.Sunday) ? Brushes.MistyRose : Brushes.Transparent);
+        public TimeSpan Interval { get; set; } 
+        public string DayText => Interval.TotalDays < 1 ? Date.ToString("H:mm") : Date.ToString("MM/dd");
+        public Brush BackgroundColor => Interval.TotalDays < 1 ? Brushes.Transparent : ((Date.DayOfWeek == DayOfWeek.Saturday) ? Brushes.AliceBlue : (Date.DayOfWeek == DayOfWeek.Sunday) ? Brushes.MistyRose : Brushes.Transparent);
     }
 
     public class MainViewModel : ViewModelBase
@@ -283,13 +288,42 @@ namespace GanttChartTool
         public ObservableCollection<GridDayItem> GridDays { get; set; } = new();
         public ObservableCollection<DependencyLine> DependencyLines { get; set; } = new();
         
+        // ★ここで選択肢を自由に追加・編集できます
+        public ObservableCollection<IntervalOption> IntervalOptions { get; } = new()
+        {
+            new IntervalOption { Name = "1時間", TimeSpan = TimeSpan.FromHours(1) },
+            new IntervalOption { Name = "3時間", TimeSpan = TimeSpan.FromHours(3) },
+            new IntervalOption { Name = "6時間", TimeSpan = TimeSpan.FromHours(6) },
+            new IntervalOption { Name = "半日", TimeSpan = TimeSpan.FromHours(12) },
+            new IntervalOption { Name = "1日", TimeSpan = TimeSpan.FromDays(1) },
+            new IntervalOption { Name = "2日", TimeSpan = TimeSpan.FromDays(2) }, // ★追加
+            new IntervalOption { Name = "3日", TimeSpan = TimeSpan.FromDays(3) }, // ★追加
+            new IntervalOption { Name = "1週間", TimeSpan = TimeSpan.FromDays(7) }
+        };
+
+        private IntervalOption _selectedInterval;
+        [JsonIgnore]
+        public IntervalOption SelectedInterval 
+        { 
+            get => _selectedInterval; 
+            set 
+            { 
+                _selectedInterval = value; 
+                OnPropertyChanged(); 
+                OnPropertyChanged(nameof(IsHourlyMode)); 
+                UpdateAll(); 
+            }
+        }
+
+        [JsonIgnore] public bool IsHourlyMode => SelectedInterval?.TimeSpan.TotalDays < 1;
+
         private DateTime _projectStartDate = new DateTime(2026, 4, 1);
         public DateTime ProjectStartDate { get => _projectStartDate; set { _projectStartDate = value; OnPropertyChanged(); UpdateAll(); } }
 
-        private int _displayDays = 30;
+        private int _displayDays = 30; 
         public int DisplayDays { get => _displayDays; set { _displayDays = Math.Max(7, value); OnPropertyChanged(); UpdateAll(); } }
 
-        public double TodayLeft => IsHourlyMode ? (DateTime.Now - ProjectStartDate).TotalHours * GanttSettings.DayWidth : (DateTime.Today - ProjectStartDate).TotalDays * GanttSettings.DayWidth;
+        public double TodayLeft => SelectedInterval == null ? 0 : (DateTime.Now - ProjectStartDate).TotalHours / SelectedInterval.TimeSpan.TotalHours * GanttSettings.DayWidth;
         
         private TaskItem? _sourceTaskForLink = null;
         
@@ -326,9 +360,6 @@ namespace GanttChartTool
         private bool _isWorkDayAdjustmentEnabled = true;
         public bool IsWorkDayAdjustmentEnabled { get => _isWorkDayAdjustmentEnabled; set { _isWorkDayAdjustmentEnabled = value; OnPropertyChanged(); } }
 
-        private bool _isHourlyMode = false;
-        public bool IsHourlyMode { get => _isHourlyMode; set { _isHourlyMode = value; OnPropertyChanged(); UpdateAll(); } }
-
         [JsonIgnore] public double ChartHeight => Math.Max(400, Tasks.Count * GanttSettings.RowHeight + 80);
         [JsonIgnore] public double ChartWidth => DisplayDays * GanttSettings.DayWidth;
 
@@ -342,7 +373,12 @@ namespace GanttChartTool
 
         [JsonIgnore] public bool SuspendUpdates { get; set; } = false;
 
-        public MainViewModel() { UpdateAll(); }
+        public MainViewModel() 
+        { 
+            // 初期状態を「1日（インデックス4）」に設定
+            _selectedInterval = IntervalOptions[4]; 
+            UpdateAll(); 
+        }
 
         public void OnTaskBarClicked(TaskItem clickedTask)
         {
@@ -361,7 +397,6 @@ namespace GanttChartTool
                     clickedTask.PredecessorId = string.Join(", ", currentIds);
                     _sourceTaskForLink.IsSelected = false; _sourceTaskForLink = null; 
                 }
-                // ★結線後、必ずUI側に矢印を引き直すように更新通知を投げる
                 UpdateAll();
             }
         }
@@ -370,7 +405,7 @@ namespace GanttChartTool
         
         public void AddNewTask() 
         { 
-            var newTask = new TaskItem(UpdateAll, () => ProjectStartDate, () => IsHourlyMode) { Id = Guid.NewGuid().ToString().Substring(0,4), RowIndex = Tasks.Count, Name = "新規タスク", Progress = 0, IndentLevel = 0 };
+            var newTask = new TaskItem(UpdateAll, () => ProjectStartDate, () => SelectedInterval.TimeSpan) { Id = Guid.NewGuid().ToString().Substring(0,4), RowIndex = Tasks.Count, Name = "新規タスク", Progress = 0, IndentLevel = 0 };
             newTask.MainBar.Start = ProjectStartDate.AddHours(9);
             newTask.MainBar.End = ProjectStartDate.AddHours(17);
             Tasks.Add(newTask); 
@@ -388,7 +423,7 @@ namespace GanttChartTool
 
         private void InsertTaskAt(int index, int indentLevel)
         {
-            var newTask = new TaskItem(UpdateAll, () => ProjectStartDate, () => IsHourlyMode) { Id = Guid.NewGuid().ToString().Substring(0,4), Name = "新規タスク", Progress = 0, IndentLevel = indentLevel };
+            var newTask = new TaskItem(UpdateAll, () => ProjectStartDate, () => SelectedInterval.TimeSpan) { Id = Guid.NewGuid().ToString().Substring(0,4), Name = "新規タスク", Progress = 0, IndentLevel = indentLevel };
             newTask.MainBar.Start = ProjectStartDate.AddHours(9);
             newTask.MainBar.End = ProjectStartDate.AddHours(17);
             if (index >= 0 && index <= Tasks.Count) Tasks.Insert(index, newTask); else Tasks.Add(newTask);
@@ -399,7 +434,7 @@ namespace GanttChartTool
         
         public void UpdateAll() 
         { 
-            if (SuspendUpdates) return;
+            if (SuspendUpdates || SelectedInterval == null) return;
 
             RefreshGrid();
             UpdateGroups(); 
@@ -453,8 +488,8 @@ namespace GanttChartTool
             GridDays.Clear();
             for (int i = 0; i < DisplayDays; i++)
             {
-                var date = IsHourlyMode ? ProjectStartDate.AddHours(i) : ProjectStartDate.AddDays(i);
-                GridDays.Add(new GridDayItem { Date = date, Left = i * GanttSettings.DayWidth, IsHourly = this.IsHourlyMode });
+                var date = ProjectStartDate.Add(TimeSpan.FromTicks(SelectedInterval.TimeSpan.Ticks * i));
+                GridDays.Add(new GridDayItem { Date = date, Left = i * GanttSettings.DayWidth, Interval = SelectedInterval.TimeSpan });
             }
         }
 
@@ -516,7 +551,8 @@ namespace GanttChartTool
                 DisplayDays = this.DisplayDays,
                 IsProgressLineVisible = this.IsProgressLineVisible,
                 IsWorkDayAdjustmentEnabled = this.IsWorkDayAdjustmentEnabled,
-                IsHourlyMode = this.IsHourlyMode
+                IsHourlyMode = this.IsHourlyMode,
+                IntervalTicks = this.SelectedInterval.TimeSpan.Ticks 
             };
             File.WriteAllText(filePath, JsonSerializer.Serialize(saveData, new JsonSerializerOptions { WriteIndented = true }));
             CurrentFilePath = filePath;
@@ -537,12 +573,21 @@ namespace GanttChartTool
                     DisplayDays = data.DisplayDays;
                     IsProgressLineVisible = data.IsProgressLineVisible;
                     IsWorkDayAdjustmentEnabled = data.IsWorkDayAdjustmentEnabled;
-                    IsHourlyMode = data.IsHourlyMode;
+                    
+                    if (data.IntervalTicks > 0)
+                    {
+                        var match = IntervalOptions.FirstOrDefault(x => x.TimeSpan.Ticks == data.IntervalTicks);
+                        SelectedInterval = match ?? IntervalOptions[4]; 
+                    }
+                    else
+                    {
+                        SelectedInterval = data.IsHourlyMode ? IntervalOptions[0] : IntervalOptions[4];
+                    }
 
                     Tasks.Clear();
                     foreach (var task in data.Tasks) 
                     { 
-                        task.SetReferences(UpdateAll, () => ProjectStartDate, () => IsHourlyMode); 
+                        task.SetReferences(UpdateAll, () => ProjectStartDate, () => SelectedInterval.TimeSpan); 
                         task.MigrateOldData(); 
                         Tasks.Add(task); 
                     }

@@ -39,7 +39,7 @@ namespace GanttChartTool
             if (sender is FrameworkElement el && el.DataContext is TaskItem task)
             {
                 var vm = (MainViewModel)this.DataContext;
-                vm.OnTaskBarClicked(task); // ここで結線処理（選択）が行われる
+                vm.OnTaskBarClicked(task);
                 
                 BarItem bar = (el.Tag as string == "SubBar") ? task.SubBar : task.MainBar;
 
@@ -53,7 +53,6 @@ namespace GanttChartTool
                     el.CaptureMouse();
                 }
                 
-                // ★修正点：結線モードであっても、背景への「クリック貫通」をここで確実にブロックする
                 e.Handled = true; 
             }
         }
@@ -77,7 +76,7 @@ namespace GanttChartTool
                     el.CaptureMouse();
                 }
                 
-                e.Handled = true; // ★ここも貫通をブロック
+                e.Handled = true;
             }
         }
 
@@ -100,7 +99,7 @@ namespace GanttChartTool
                     el.CaptureMouse();
                 }
                 
-                e.Handled = true; // ★ここも貫通をブロック
+                e.Handled = true;
             }
         }
 
@@ -111,28 +110,23 @@ namespace GanttChartTool
                 if (bar.IsDragging || _isResizingLeft || _isResizingRight)
                 {
                     int units = (int)Math.Round((e.GetPosition(null).X - _dragStartPos.X) / GanttSettings.DayWidth);
+                    
+                    // ★変更：移動したマス数 × 選んでいるインターバル時間 で移動量を計算
+                    TimeSpan diff = TimeSpan.FromTicks(vm.SelectedInterval.TimeSpan.Ticks * units);
 
                     if (bar.IsDragging && !_isResizingLeft && !_isResizingRight)
                     {
-                        if (vm.IsHourlyMode)
-                        {
-                            bar.Start = bar.OriginalStart.Value.AddHours(units);
-                            bar.End = bar.OriginalEnd.Value.AddHours(units);
-                        }
-                        else
-                        {
-                            bar.Start = bar.OriginalStart.Value.AddDays(units);
-                            bar.End = bar.OriginalEnd.Value.AddDays(units);
-                        }
+                        bar.Start = bar.OriginalStart.Value.Add(diff);
+                        bar.End = bar.OriginalEnd.Value.Add(diff);
                     }
                     else if (_isResizingLeft)
                     {
-                        DateTime newStart = vm.IsHourlyMode ? bar.OriginalStart.Value.AddHours(units) : bar.OriginalStart.Value.AddDays(units);
+                        DateTime newStart = bar.OriginalStart.Value.Add(diff);
                         if (newStart < bar.End.Value) bar.Start = newStart;
                     }
                     else if (_isResizingRight)
                     {
-                        DateTime newEnd = vm.IsHourlyMode ? bar.OriginalEnd.Value.AddHours(units) : bar.OriginalEnd.Value.AddDays(units);
+                        DateTime newEnd = bar.OriginalEnd.Value.Add(diff);
                         if (newEnd > bar.Start.Value) bar.End = newEnd;
                     }
                 }
