@@ -49,8 +49,8 @@
       "LineColorName": "DarkOrange"
     },
     {
-      "Id": "7b15",
-      "Name": "apidbm",
+      "Id": "66aa",
+      "Name": "apidate",
       "Assignee": "",
       "Memo": "",
       "IsGroup": false,
@@ -76,7 +76,7 @@
       "Id": "409c",
       "Name": "ApiInit()",
       "Assignee": "",
-      "Memo": "",
+      "Memo": "Api\u3092\u4F7F\u7528\u3059\u308B\u30D7\u30ED\u30BB\u30B9\u304C\u5FC5\u305A\u5B9F\u884C\u3059\u308BAPI\u306E\u521D\u671F\u5316\u95A2\u6570\u3002\r\nApi\u95A2\u6570\u304C\u4F7F\u7528\u3059\u308B\u30B0\u30ED\u30FC\u30D0\u30EB\u5909\u6570\u3092\u521D\u671F\u5316\u3057\u3066DB\u30A2\u30AF\u30BB\u30B9\u304C\u53EF\u80FD\u306A\u72B6\u614B\u306B\u3059\u308B\u3002\r\n",
       "IsGroup": false,
       "IndentLevel": 0,
       "MainBar": {
@@ -92,41 +92,89 @@
         "End": null
       },
       "Progress": 0,
-      "PredecessorId": "7b15",
+      "PredecessorId": "66aa",
       "RowIndex": 3,
+      "LineColorName": "DarkOrange"
+    },
+    {
+      "Id": "7b15",
+      "Name": "apidbm",
+      "Assignee": "",
+      "Memo": "",
+      "IsGroup": false,
+      "IndentLevel": 0,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "MediumPurple",
+        "Start": "2026-04-15T00:00:00",
+        "End": "2026-04-17T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
+      "Progress": 0,
+      "PredecessorId": "409c",
+      "RowIndex": 4,
+      "LineColorName": "DarkOrange"
+    },
+    {
+      "Id": "b5fc",
+      "Name": "ApiGetXXX()",
+      "Assignee": "",
+      "Memo": "",
+      "IsGroup": false,
+      "IndentLevel": 0,
+      "MainBar": {
+        "Name": "",
+        "ColorName": "SteelBlue",
+        "Start": "2026-04-18T00:00:00",
+        "End": "2026-04-20T00:00:00"
+      },
+      "SubBar": {
+        "Name": "",
+        "ColorName": "DimGray",
+        "Start": null,
+        "End": null
+      },
+      "Progress": 0,
+      "PredecessorId": "7b15",
+      "RowIndex": 5,
       "LineColorName": "DarkOrange"
     }
   ],
   "Notes": [
     {
       "Text": "\u30AA\u30EC\u30F3\u30B8\u306F\u5B9A\u7FA9\u30D5\u30A1\u30A4\u30EB\r\n\u9752\u306F\u51E6\u7406\r\n\u7D2B\u306F\u30C7\u30FC\u30BF",
-      "X": 16,
-      "Y": 146,
-      "Width": 143,
-      "Height": 75,
-      "IsCallout": false,
-      "TargetX": 50,
-      "TargetY": 150
+      "TimePosition": "2026-04-03T03:02:23.3529677+09:00",
+      "TargetTimePosition": "2026-04-24T19:14:23.3529693+09:00",
+      "Y": 176,
+      "Width": 147,
+      "Height": 85,
+      "TargetY": 150,
+      "IsCallout": false
     },
     {
       "Text": "startdmn\u6642\u306B\u5B9F\u884C\u3055\u308C\u308B",
-      "X": 294,
-      "Y": 37,
+      "TimePosition": "2026-04-08T07:50:23.3535657+09:00",
+      "TargetTimePosition": "2026-04-07T15:02:23.3535663+09:00",
+      "Y": 38,
       "Width": 148,
       "Height": 48,
-      "IsCallout": true,
-      "TargetX": 271,
-      "TargetY": 88
+      "TargetY": 91,
+      "IsCallout": true
     },
     {
-      "Text": "\u30B0\u30ED\u30FC\u30D0\u30EB\u5909\u6570",
-      "X": 426,
-      "Y": 95,
-      "Width": 101,
-      "Height": 48,
-      "IsCallout": true,
-      "TargetX": 398,
-      "TargetY": 125
+      "Text": "\u30B0\u30ED\u30FC\u30D0\u30EB\u5909\u6570\r\nApiDB\u306E\u5171\u6709\u30E1\u30E2\u30EA\u306E\u30A2\u30C9\u30EC\u30B9\u60C5\u5831\u3092\u6301\u3063\u3066\u3044\u308B\u3002",
+      "TimePosition": "2026-04-17T08:26:23.3537487+09:00",
+      "TargetTimePosition": "2026-04-16T19:14:23.3537489+09:00",
+      "Y": 140,
+      "Width": 192,
+      "Height": 77,
+      "TargetY": 209,
+      "IsCallout": true
     }
   ],
   "ProjectStartDate": "2026-04-01T00:00:00",
@@ -134,5 +182,6 @@
   "IsProgressLineVisible": false,
   "IsWorkDayAdjustmentEnabled": false,
   "IntervalTicks": 864000000000,
-  "IsSnapToDay": false
+  "IsSnapToDay": false,
+  "IsHourlyMode": false
 }

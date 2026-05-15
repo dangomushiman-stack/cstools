@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,12 +13,40 @@ namespace GanttChartTool
         private bool _isResizingLeft = false, _isResizingRight = false, _isDraggingNote = false, _isResizingNote = false, _isDraggingNoteTarget = false, _isSync = false;
         private Point _dragStartPos; private object? _dragTarget = null;
         private double _origX, _origY, _origWidth, _origHeight;
-        private DateTime _origTime, _origTargetTime; // ★ドラッグ開始時の時間位置を記憶するための変数
+        private DateTime _origTime, _origTargetTime; 
         private ScrollViewer? _dgScroll;
 
-        public MainWindow() { InitializeComponent(); this.DataContext = new MainViewModel(); }
+        public MainWindow() 
+        { 
+            InitializeComponent(); 
+            this.DataContext = new MainViewModel(); 
+            // ★追加：ウィンドウを閉じる時にチェック処理を挟む
+            this.Closing += Window_Closing;
+        }
+
         private void Window_Loaded(object sender, RoutedEventArgs e) { _dgScroll = GetVisualChild<ScrollViewer>(MainDataGrid); if (_dgScroll != null) _dgScroll.ScrollChanged += (s, ev) => { if (!_isSync) { _isSync = true; GanttScrollViewer.ScrollToVerticalOffset(ev.VerticalOffset); _isSync = false; } }; }
         private void GanttScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e) { if (!_isSync && _dgScroll != null) { _isSync = true; _dgScroll.ScrollToVerticalOffset(e.VerticalOffset); _isSync = false; } }
+
+        // ★追加：ウィンドウを閉じる（終了する）ときの確認
+        private void Window_Closing(object? sender, CancelEventArgs e)
+        {
+            var vm = (MainViewModel)this.DataContext;
+            if (vm.HasUnsavedChanges)
+            {
+                var result = MessageBox.Show("変更が保存されていません。保存して終了しますか？\n（[いいえ] を選ぶと変更は破棄されます）", "保存の確認", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+                if (result == MessageBoxResult.Yes)
+                {
+                    // 保存を試みる
+                    Save_Click(null!, new RoutedEventArgs());
+                    // もし名前を付けて保存ダイアログで「キャンセル」を押した場合、終了もキャンセルする
+                    if (vm.HasUnsavedChanges) e.Cancel = true; 
+                }
+                else if (result == MessageBoxResult.Cancel)
+                {
+                    e.Cancel = true; // 終了をキャンセル
+                }
+            }
+        }
 
         private void Bar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -68,8 +97,6 @@ namespace GanttChartTool
             }
         }
 
-        // --- メモ（Note）のドラッグ処理を時間ベースに更新 ---
-
         private void NoteTextBox_GotFocus(object sender, RoutedEventArgs e) { if (sender is TextBox tb && tb.DataContext is NoteItem note) ((MainViewModel)this.DataContext).SelectNote(note); }
         private void NoteTail_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { if (sender is FrameworkElement el && el.DataContext is NoteItem note) { ((MainViewModel)this.DataContext).SelectNote(note); e.Handled = true; } }
         private void NoteBorder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { if (sender is FrameworkElement el && el.DataContext is NoteItem note) { if (!(e.OriginalSource is TextBox)) { ((MainViewModel)this.DataContext).SelectNote(note); e.Handled = true; } } }
@@ -80,7 +107,7 @@ namespace GanttChartTool
             { 
                 ((MainViewModel)this.DataContext).SelectNote(note); 
                 _isDraggingNote = true; _dragTarget = note; _dragStartPos = e.GetPosition(null); 
-                _origTime = note.TimePosition; // ★開始時の時間を記憶
+                _origTime = note.TimePosition;
                 _origY = note.Y; 
                 el.CaptureMouse(); e.Handled = true; 
             } 
@@ -92,10 +119,9 @@ namespace GanttChartTool
             { 
                 var cur = e.GetPosition(null);
                 double dx = cur.X - _dragStartPos.X;
-                // ピクセル移動量を今のスケールでの時間差分に変換
                 TimeSpan diff = TimeSpan.FromTicks((long)(vm.SelectedInterval.TimeSpan.Ticks * (dx / GanttSettings.DayWidth)));
                 
-                note.TimePosition = _origTime.Add(diff); // ★時間位置を更新
+                note.TimePosition = _origTime.Add(diff);
                 note.Y = _origY + (cur.Y - _dragStartPos.Y); 
             } 
         }
@@ -112,7 +138,7 @@ namespace GanttChartTool
             { 
                 ((MainViewModel)this.DataContext).SelectNote(note); 
                 _isDraggingNoteTarget = true; _dragTarget = note; _dragStartPos = e.GetPosition(null); 
-                _origTargetTime = note.TargetTimePosition; // ★ターゲットの時間を記憶
+                _origTargetTime = note.TargetTimePosition; 
                 _origY = note.TargetY; 
                 el.CaptureMouse(); e.Handled = true; 
             } 
@@ -126,7 +152,7 @@ namespace GanttChartTool
                 double dx = cur.X - _dragStartPos.X;
                 TimeSpan diff = TimeSpan.FromTicks((long)(vm.SelectedInterval.TimeSpan.Ticks * (dx / GanttSettings.DayWidth)));
                 
-                note.TargetTimePosition = _origTargetTime.Add(diff); // ★ターゲットの時間位置を更新
+                note.TargetTimePosition = _origTargetTime.Add(diff); 
                 note.TargetY = _origY + (cur.Y - _dragStartPos.Y); 
             } 
         }
@@ -162,7 +188,29 @@ namespace GanttChartTool
 
         private void Save_Click(object sender, RoutedEventArgs e) { var vm = (MainViewModel)this.DataContext; if (string.IsNullOrEmpty(vm.CurrentFilePath)) SaveAs_Click(sender, e); else { vm.SaveToFile(vm.CurrentFilePath); MessageBox.Show("保存しました。"); } }
         private void SaveAs_Click(object sender, RoutedEventArgs e) { var vm = (MainViewModel)this.DataContext; var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "JSON|*.json", FileName = "tasks.json" }; if (dlg.ShowDialog() == true) { vm.SaveToFile(dlg.FileName); MessageBox.Show("保存しました。"); } }
-        private void Load_Click(object sender, RoutedEventArgs e) { var vm = (MainViewModel)this.DataContext; var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "JSON|*.json" }; if (dlg.ShowDialog() == true) vm.LoadFromFile(dlg.FileName); }
+        
+        // ★変更：読み込み前に未保存の変更がないかチェック
+        private void Load_Click(object sender, RoutedEventArgs e) 
+        { 
+            var vm = (MainViewModel)this.DataContext; 
+            if (vm.HasUnsavedChanges)
+            {
+                var result = MessageBox.Show("現在のプロジェクトに変更があります。読み込む前に保存しますか？", "保存の確認", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+                if (result == MessageBoxResult.Yes)
+                {
+                    Save_Click(sender, e);
+                    // 保存がキャンセルされた場合は読み込みも中止する
+                    if (vm.HasUnsavedChanges) return; 
+                }
+                else if (result == MessageBoxResult.Cancel)
+                {
+                    return; // 読み込みを中止
+                }
+            }
+
+            var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "JSON|*.json" }; 
+            if (dlg.ShowDialog() == true) vm.LoadFromFile(dlg.FileName); 
+        }
 
         private void MainDataGrid_PreviewKeyDown(object sender, KeyEventArgs e)
         {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -78,8 +79,11 @@ namespace GanttChartTool
         public int DisplayDays { get; set; } = 30;
         public bool IsProgressLineVisible { get; set; } = true;
         public bool IsWorkDayAdjustmentEnabled { get; set; } = true;
-        public long IntervalTicks { get; set; } = TimeSpan.FromDays(1).Ticks;
+        public long IntervalTicks { get; set; } = 0; 
         public bool IsSnapToDay { get; set; } = false;
+        
+        // ★修正：過去のJSONファイルを読み込むための互換性プロパティとして復活
+        public bool IsHourlyMode { get; set; } = false; 
     }
 
     public class DependencyLine { public string PathData { get; set; } = ""; public Brush LineBrush { get; set; } = Brushes.DarkOrange; }
@@ -98,14 +102,24 @@ namespace GanttChartTool
         public ObservableCollection<string> AvailableLineColors { get; } = new ObservableCollection<string> { "DarkOrange", "Crimson", "RoyalBlue", "SeaGreen", "DimGray" };
         public ObservableCollection<string> AvailableBarColors { get; } = new ObservableCollection<string> { "SteelBlue", "MediumSeaGreen", "Tomato", "MediumPurple", "DimGray", "Goldenrod", "Teal" };
 
+        [JsonIgnore] public bool IsInternalLoading { get; set; } = false;
+        private bool _hasUnsavedChanges = false;
+        [JsonIgnore]
+        public bool HasUnsavedChanges 
+        { 
+            get => _hasUnsavedChanges; 
+            set { _hasUnsavedChanges = value; OnPropertyChanged(); OnPropertyChanged(nameof(WindowTitle)); } 
+        }
+        public void MarkDirty() { if (!IsInternalLoading) HasUnsavedChanges = true; }
+
         private IntervalOption _selectedInterval;
-        public IntervalOption SelectedInterval { get => _selectedInterval; set { _selectedInterval = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsHourlyMode)); UpdateAll(); } }
+        public IntervalOption SelectedInterval { get => _selectedInterval; set { _selectedInterval = value; MarkDirty(); OnPropertyChanged(); OnPropertyChanged(nameof(IsHourlyMode)); UpdateAll(); } }
         public bool IsHourlyMode => SelectedInterval?.TimeSpan.TotalDays < 1;
         private bool _isSnapToDay = false;
-        public bool IsSnapToDay { get => _isSnapToDay; set { _isSnapToDay = value; OnPropertyChanged(); } }
+        public bool IsSnapToDay { get => _isSnapToDay; set { _isSnapToDay = value; MarkDirty(); OnPropertyChanged(); } }
         private DateTime _projectStartDate = new DateTime(2026, 4, 1);
-        public DateTime ProjectStartDate { get => _projectStartDate; set { _projectStartDate = value; OnPropertyChanged(); UpdateAll(); } }
-        private int _displayDays = 30; public int DisplayDays { get => _displayDays; set { _displayDays = Math.Max(7, value); OnPropertyChanged(); UpdateAll(); } }
+        public DateTime ProjectStartDate { get => _projectStartDate; set { _projectStartDate = value; MarkDirty(); OnPropertyChanged(); UpdateAll(); } }
+        private int _displayDays = 30; public int DisplayDays { get => _displayDays; set { _displayDays = Math.Max(7, value); MarkDirty(); OnPropertyChanged(); UpdateAll(); } }
         public double TodayLeft => SelectedInterval == null ? 0 : (DateTime.Now - ProjectStartDate).TotalHours / SelectedInterval.TimeSpan.TotalHours * GanttSettings.DayWidth;
         private TaskItem? _sourceTaskForLink = null, _memoTask;
         public TaskItem? MemoTask { get => _memoTask; set { _memoTask = value; OnPropertyChanged(); } }
@@ -114,17 +128,59 @@ namespace GanttChartTool
         public TaskItem? SelectedTask { get => _selectedTask; set { _selectedTask = value; OnPropertyChanged(); UpdateHighlight(); } }
         private bool _isLinkMode, _isProgressLineVisible = true, _isWorkDayAdjustmentEnabled = true;
         public bool IsLinkMode { get => _isLinkMode; set { _isLinkMode = value; OnPropertyChanged(); if (!_isLinkMode) ClearSelection(); } }
-        public bool IsProgressLineVisible { get => _isProgressLineVisible; set { _isProgressLineVisible = value; OnPropertyChanged(); } }
-        public bool IsWorkDayAdjustmentEnabled { get => _isWorkDayAdjustmentEnabled; set { _isWorkDayAdjustmentEnabled = value; OnPropertyChanged(); } }
+        public bool IsProgressLineVisible { get => _isProgressLineVisible; set { _isProgressLineVisible = value; MarkDirty(); OnPropertyChanged(); } }
+        public bool IsWorkDayAdjustmentEnabled { get => _isWorkDayAdjustmentEnabled; set { _isWorkDayAdjustmentEnabled = value; MarkDirty(); OnPropertyChanged(); } }
         public double ChartHeight => Math.Max(400, Tasks.Count * GanttSettings.RowHeight + 80);
         public double ChartWidth => DisplayDays * GanttSettings.DayWidth;
         private string _progressLinePath = "";
         public string ProgressLinePath { get => _progressLinePath; set { _progressLinePath = value; OnPropertyChanged(); } }
         private string _currentFilePath = ""; public string CurrentFilePath { get => _currentFilePath; set { _currentFilePath = value; OnPropertyChanged(); OnPropertyChanged(nameof(WindowTitle)); } }
-        public string WindowTitle => string.IsNullOrEmpty(CurrentFilePath) ? "PL Gantt Tool - 新規プロジェクト" : $"PL Gantt Tool - {Path.GetFileName(CurrentFilePath)}";
+        
+        public string WindowTitle => (string.IsNullOrEmpty(CurrentFilePath) ? "PL Gantt Tool - 新規プロジェクト" : $"PL Gantt Tool - {Path.GetFileName(CurrentFilePath)}") + (HasUnsavedChanges ? " *" : "");
+        
         public bool SuspendUpdates { get; set; } = false;
         
-        public MainViewModel() { _selectedInterval = IntervalOptions[4]; UpdateAll(); }
+        public MainViewModel() 
+        { 
+            IsInternalLoading = true;
+            _selectedInterval = IntervalOptions[4]; 
+
+            Tasks.CollectionChanged += (s, e) => {
+                MarkDirty();
+                if (e.NewItems != null) foreach (INotifyPropertyChanged item in e.NewItems) AttachDirtyTracker(item);
+            };
+            Notes.CollectionChanged += (s, e) => {
+                MarkDirty();
+                if (e.NewItems != null) foreach (INotifyPropertyChanged item in e.NewItems) AttachDirtyTracker(item);
+            };
+
+            UpdateAll(); 
+            IsInternalLoading = false;
+            HasUnsavedChanges = false;
+        }
+
+        private void AttachDirtyTracker(INotifyPropertyChanged item)
+        {
+            item.PropertyChanged -= Item_PropertyChanged;
+            item.PropertyChanged += Item_PropertyChanged;
+            if (item is TaskItem t)
+            {
+                t.MainBar.PropertyChanged -= Item_PropertyChanged;
+                t.MainBar.PropertyChanged += Item_PropertyChanged;
+                t.SubBar.PropertyChanged -= Item_PropertyChanged;
+                t.SubBar.PropertyChanged += Item_PropertyChanged;
+            }
+        }
+
+        private void Item_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "IsSelected" || e.PropertyName == "IsRowSelected" || e.PropertyName == "IsRelevant" || 
+                e.PropertyName == "IsDragging" || e.PropertyName == "GhostVisibility" || e.PropertyName == "GhostLeft" || e.PropertyName == "GhostWidth" ||
+                e.PropertyName == "CalloutVisibility" || e.PropertyName == "TailPathData" || e.PropertyName == "Top" || e.PropertyName == "RowTop" || e.PropertyName == "Left" || e.PropertyName == "Width") 
+                return; 
+            
+            MarkDirty();
+        }
 
         public void SelectNote(NoteItem targetNote) { ClearSelection(); if (targetNote != null) targetNote.IsSelected = true; }
         
@@ -160,25 +216,58 @@ namespace GanttChartTool
             foreach (var note in Notes) note.IsSelected = false; 
         }
         
-        public void AddNewTask() { var newTask = new TaskItem(UpdateAll, () => ProjectStartDate, () => SelectedInterval.TimeSpan) { Id = Guid.NewGuid().ToString().Substring(0, 4), Name = "新規タスク", MainBar = { Start = ProjectStartDate.AddHours(9), End = ProjectStartDate.AddHours(17) } }; Tasks.Add(newTask); RefreshRowIndices(); UpdateAll(); }
-        
-        // ★メモ追加時も基準情報を教えてあげるように修正
-        public void AddNewNote() 
-        { 
-            var note = new NoteItem { TimePosition = ProjectStartDate.AddHours(12) };
-            note.GetProjectStart = () => ProjectStartDate;
-            note.GetGridInterval = () => SelectedInterval.TimeSpan;
-            Notes.Add(note); 
-            SelectNote(note); 
+        public void AddNewTask()
+        {
+            var start = ProjectStartDate.Date;
+            var end = start.Add(SelectedInterval.TimeSpan);
+
+            var newTask = new TaskItem(UpdateAll, () => ProjectStartDate, () => SelectedInterval.TimeSpan)
+            {
+                Id = Guid.NewGuid().ToString().Substring(0, 4),
+                Name = "新規タスク",
+                MainBar =
+                {
+                    Start = start,
+                    End = end
+                }
+            };
+
+            Tasks.Add(newTask);
+            RefreshRowIndices();
+            UpdateAll();
         }
-        
+        public void AddNewNote() { var note = new NoteItem { TimePosition = ProjectStartDate.AddHours(12) }; note.GetProjectStart = () => ProjectStartDate; note.GetGridInterval = () => SelectedInterval.TimeSpan; Notes.Add(note); SelectNote(note); }
         public void DeleteNote(NoteItem note) { if (note != null) Notes.Remove(note); }
         public void InsertTaskAbove(TaskItem target) { if (target != null) InsertTaskAt(Tasks.IndexOf(target), target.IndentLevel); }
         public void InsertTaskBelow(TaskItem target) { if (target != null) InsertTaskAt(Tasks.IndexOf(target) + 1, target.IndentLevel); }
         public void DeleteTask(TaskItem target) { if (target != null && Tasks.Contains(target)) { Tasks.Remove(target); RefreshRowIndices(); UpdateAll(); } }
         public void MoveTaskUp(TaskItem target) { if (target == null) return; int index = Tasks.IndexOf(target); if (index > 0) { Tasks.Move(index, index - 1); RefreshRowIndices(); UpdateAll(); } }
         public void MoveTaskDown(TaskItem target) { if (target == null) return; int index = Tasks.IndexOf(target); if (index >= 0 && index < Tasks.Count - 1) { Tasks.Move(index, index + 1); RefreshRowIndices(); UpdateAll(); } }
-        private void InsertTaskAt(int index, int indentLevel) { var newTask = new TaskItem(UpdateAll, () => ProjectStartDate, () => SelectedInterval.TimeSpan) { Id = Guid.NewGuid().ToString().Substring(0, 4), Name = "新規タスク", MainBar = { Start = ProjectStartDate.AddHours(9), End = ProjectStartDate.AddHours(17) }, IndentLevel = indentLevel }; if (index >= 0 && index <= Tasks.Count) Tasks.Insert(index, newTask); else Tasks.Add(newTask); RefreshRowIndices(); UpdateAll(); }
+        private void InsertTaskAt(int index, int indentLevel)
+        {
+            var start = ProjectStartDate.Date;
+            var end = start.Add(SelectedInterval.TimeSpan);
+
+            var newTask = new TaskItem(UpdateAll, () => ProjectStartDate, () => SelectedInterval.TimeSpan)
+            {
+                Id = Guid.NewGuid().ToString().Substring(0, 4),
+                Name = "新規タスク",
+                MainBar =
+                {
+                    Start = start,
+                    End = end
+                },
+                IndentLevel = indentLevel
+            };
+
+            if (index >= 0 && index <= Tasks.Count)
+                Tasks.Insert(index, newTask);
+            else
+                Tasks.Add(newTask);
+
+            RefreshRowIndices();
+            UpdateAll();
+        }
         private void RefreshRowIndices() { for (int i = 0; i < Tasks.Count; i++) Tasks[i].RowIndex = i; }
 
         public void UpdateAll()
@@ -188,9 +277,7 @@ namespace GanttChartTool
             HolidayBands.Clear(); DateTime current = ProjectStartDate.Date, end = ProjectStartDate.Add(TimeSpan.FromTicks(SelectedInterval.TimeSpan.Ticks * DisplayDays));
             while (current <= end.Date.AddDays(1)) { if (current.DayOfWeek == DayOfWeek.Saturday || current.DayOfWeek == DayOfWeek.Sunday) { double left = ((current - ProjectStartDate).TotalHours / SelectedInterval.TimeSpan.TotalHours) * GanttSettings.DayWidth, width = (((current.AddDays(1) - ProjectStartDate).TotalHours / SelectedInterval.TimeSpan.TotalHours) * GanttSettings.DayWidth) - left; if (left + width > 0 && left < ChartWidth) HolidayBands.Add(new HolidayBand { Left = left, Width = width, BackgroundColor = current.DayOfWeek == DayOfWeek.Saturday ? Brushes.AliceBlue : Brushes.MistyRose }); } current = current.AddDays(1); }
             UpdateGroups(); UpdateDependencies(); UpdateHighlight(); UpdateProgressLine();
-            foreach (var t in Tasks) t.RefreshDisplay(); 
-            // ★画面更新（単位変更時など）にすべてのメモを再計算
-            foreach (var n in Notes) n.RefreshDisplay();
+            foreach (var t in Tasks) t.RefreshDisplay(); foreach (var n in Notes) n.RefreshDisplay();
             OnPropertyChanged(nameof(ChartHeight)); OnPropertyChanged(nameof(ChartWidth)); OnPropertyChanged(nameof(TodayLeft));
         }
 
@@ -211,7 +298,13 @@ namespace GanttChartTool
         private void HighlightPredecessors(TaskItem task) { if (string.IsNullOrWhiteSpace(task.PredecessorId)) return; foreach (var id in task.PredecessorId.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)) { var pre = Tasks.FirstOrDefault(t => t.Id == id); if (pre != null && !pre.IsRelevant) { pre.IsRelevant = true; HighlightPredecessors(pre); } } }
         private void HighlightSuccessors(TaskItem task) { var successors = Tasks.Where(t => !string.IsNullOrWhiteSpace(t.PredecessorId) && t.PredecessorId.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Contains(task.Id)); foreach (var suc in successors) { if (!suc.IsRelevant) { suc.IsRelevant = true; HighlightSuccessors(suc); } } }
 
-        public void SaveToFile(string filePath) { var data = new ProjectSaveData { Tasks = Tasks, Notes = Notes, ProjectStartDate = ProjectStartDate, DisplayDays = DisplayDays, IsProgressLineVisible = IsProgressLineVisible, IsWorkDayAdjustmentEnabled = IsWorkDayAdjustmentEnabled, IntervalTicks = SelectedInterval.TimeSpan.Ticks, IsSnapToDay = IsSnapToDay }; File.WriteAllText(filePath, JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true })); CurrentFilePath = filePath; }
+        public void SaveToFile(string filePath) 
+        { 
+            var data = new ProjectSaveData { Tasks = Tasks, Notes = Notes, ProjectStartDate = ProjectStartDate, DisplayDays = DisplayDays, IsProgressLineVisible = IsProgressLineVisible, IsWorkDayAdjustmentEnabled = IsWorkDayAdjustmentEnabled, IntervalTicks = SelectedInterval.TimeSpan.Ticks, IsSnapToDay = IsSnapToDay }; 
+            File.WriteAllText(filePath, JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true })); 
+            CurrentFilePath = filePath; 
+            HasUnsavedChanges = false; 
+        }
         
         public void LoadFromFile(string filePath) 
         { 
@@ -221,23 +314,19 @@ namespace GanttChartTool
                 var data = JsonSerializer.Deserialize<ProjectSaveData>(File.ReadAllText(filePath), new JsonSerializerOptions { NumberHandling = JsonNumberHandling.AllowReadingFromString }); 
                 if (data != null) 
                 { 
+                    IsInternalLoading = true; 
                     ProjectStartDate = data.ProjectStartDate; DisplayDays = data.DisplayDays; IsProgressLineVisible = data.IsProgressLineVisible; IsWorkDayAdjustmentEnabled = data.IsWorkDayAdjustmentEnabled; IsSnapToDay = data.IsSnapToDay; 
-                    SelectedInterval = IntervalOptions.FirstOrDefault(x => x.TimeSpan.Ticks == data.IntervalTicks) ?? IntervalOptions[4]; 
+                    SelectedInterval = IntervalOptions.FirstOrDefault(x => x.TimeSpan.Ticks == data.IntervalTicks) ?? (data.IsHourlyMode ? IntervalOptions[0] : IntervalOptions[4]); 
                     
                     Tasks.Clear(); foreach (var t in data.Tasks) { t.SetReferences(UpdateAll, () => ProjectStartDate, () => SelectedInterval.TimeSpan); t.MigrateOldData(); Tasks.Add(t); } 
-                    
-                    // ★読込時もメモの基準情報をセットする
                     Notes.Clear(); 
                     if (data.Notes != null) 
                     {
-                        foreach (var n in data.Notes) 
-                        {
-                            n.GetProjectStart = () => ProjectStartDate;
-                            n.GetGridInterval = () => SelectedInterval.TimeSpan;
-                            Notes.Add(n);
-                        }
+                        foreach (var n in data.Notes) { n.GetProjectStart = () => ProjectStartDate; n.GetGridInterval = () => SelectedInterval.TimeSpan; Notes.Add(n); }
                     }
                     RefreshRowIndices(); UpdateAll(); CurrentFilePath = filePath; 
+                    IsInternalLoading = false; 
+                    HasUnsavedChanges = false; 
                 } 
             } catch (Exception ex) { MessageBox.Show($"エラー: {ex.Message}"); } 
         }
