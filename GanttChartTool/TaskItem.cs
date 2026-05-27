@@ -73,6 +73,13 @@ namespace GanttChartTool
         }
 
         [JsonIgnore]
+        public double Length
+        {
+            get => Math.Max(0, MainBar.EndNumber - MainBar.StartNumber);
+            set { if (value >= 0) MainBar.EndNumber = MainBar.StartNumber + value; OnPropertyChanged(); }
+        }
+
+        [JsonIgnore]
         public int RemainingWorkDays
         {
             get
@@ -124,6 +131,7 @@ namespace GanttChartTool
             OnPropertyChanged(nameof(Top)); 
             OnPropertyChanged(nameof(RowTop));
             OnPropertyChanged(nameof(WorkDays));
+            OnPropertyChanged(nameof(Length));
             OnPropertyChanged(nameof(RemainingWorkDays));
             OnPropertyChanged(nameof(ProgressWidth));
         }

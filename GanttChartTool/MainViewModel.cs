@@ -81,13 +81,14 @@ namespace GanttChartTool
         public bool IsWorkDayAdjustmentEnabled { get; set; } = true;
         public long IntervalTicks { get; set; } = 0; 
         public bool IsSnapToDay { get; set; } = false;
+        public bool IsNumericMode { get; set; } = false;
         
         // ★修正：過去のJSONファイルを読み込むための互換性プロパティとして復活
         public bool IsHourlyMode { get; set; } = false; 
     }
 
     public class DependencyLine { public string PathData { get; set; } = ""; public Brush LineBrush { get; set; } = Brushes.DarkOrange; }
-    public class GridDayItem { public DateTime Date { get; set; } public double Left { get; set; } public TimeSpan Interval { get; set; } public string DayText => Interval.TotalDays < 1 ? Date.ToString("H:mm") : Date.ToString("MM/dd"); }
+    public class GridDayItem { public DateTime Date { get; set; } public double Left { get; set; } public TimeSpan Interval { get; set; } public string Label { get; set; } = ""; public string DayText => !string.IsNullOrEmpty(Label) ? Label : (Interval.TotalDays < 1 ? Date.ToString("H:mm") : Date.ToString("MM/dd")); }
     public class HolidayBand { public double Left { get; set; } public double Width { get; set; } public Brush BackgroundColor { get; set; } = Brushes.Transparent; }
 
     public class MainViewModel : ViewModelBase
@@ -114,13 +115,30 @@ namespace GanttChartTool
 
         private IntervalOption _selectedInterval;
         public IntervalOption SelectedInterval { get => _selectedInterval; set { _selectedInterval = value; MarkDirty(); OnPropertyChanged(); OnPropertyChanged(nameof(IsHourlyMode)); UpdateAll(); } }
-        public bool IsHourlyMode => SelectedInterval?.TimeSpan.TotalDays < 1;
+        public bool IsHourlyMode => !IsNumericMode && SelectedInterval?.TimeSpan.TotalDays < 1;
+        public bool IsDateMode => !IsNumericMode;
+        public string AxisStartCaption => IsNumericMode ? "数値軸:" : "開始日:";
         private bool _isSnapToDay = false;
         public bool IsSnapToDay { get => _isSnapToDay; set { _isSnapToDay = value; MarkDirty(); OnPropertyChanged(); } }
+        private bool _isNumericMode = false;
+        public bool IsNumericMode
+        {
+            get => _isNumericMode;
+            set
+            {
+                _isNumericMode = value;
+                MarkDirty();
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsDateMode));
+                OnPropertyChanged(nameof(IsHourlyMode));
+                OnPropertyChanged(nameof(AxisStartCaption));
+                UpdateAll();
+            }
+        }
         private DateTime _projectStartDate = new DateTime(2026, 4, 1);
         public DateTime ProjectStartDate { get => _projectStartDate; set { _projectStartDate = value; MarkDirty(); OnPropertyChanged(); UpdateAll(); } }
         private int _displayDays = 30; public int DisplayDays { get => _displayDays; set { _displayDays = Math.Max(7, value); MarkDirty(); OnPropertyChanged(); UpdateAll(); } }
-        public double TodayLeft => SelectedInterval == null ? 0 : (DateTime.Now - ProjectStartDate).TotalHours / SelectedInterval.TimeSpan.TotalHours * GanttSettings.DayWidth;
+        public double TodayLeft => (SelectedInterval == null || IsNumericMode) ? 0 : (DateTime.Now - ProjectStartDate).TotalHours / SelectedInterval.TimeSpan.TotalHours * GanttSettings.DayWidth;
         private TaskItem? _sourceTaskForLink = null, _memoTask;
         public TaskItem? MemoTask { get => _memoTask; set { _memoTask = value; OnPropertyChanged(); } }
         private TaskItem? _dataGridSelectedTask, _selectedTask;
@@ -273,9 +291,9 @@ namespace GanttChartTool
         public void UpdateAll()
         {
             if (SuspendUpdates || SelectedInterval == null) return;
-            GridDays.Clear(); for (int i = 0; i < DisplayDays; i++) GridDays.Add(new GridDayItem { Date = ProjectStartDate.Add(TimeSpan.FromTicks(SelectedInterval.TimeSpan.Ticks * i)), Left = i * GanttSettings.DayWidth, Interval = SelectedInterval.TimeSpan });
+            GridDays.Clear(); for (int i = 0; i < DisplayDays; i++) GridDays.Add(new GridDayItem { Date = ProjectStartDate.Add(TimeSpan.FromTicks(SelectedInterval.TimeSpan.Ticks * i)), Left = i * GanttSettings.DayWidth, Interval = SelectedInterval.TimeSpan, Label = IsNumericMode ? i.ToString() : "" });
             HolidayBands.Clear(); DateTime current = ProjectStartDate.Date, end = ProjectStartDate.Add(TimeSpan.FromTicks(SelectedInterval.TimeSpan.Ticks * DisplayDays));
-            while (current <= end.Date.AddDays(1)) { if (current.DayOfWeek == DayOfWeek.Saturday || current.DayOfWeek == DayOfWeek.Sunday) { double left = ((current - ProjectStartDate).TotalHours / SelectedInterval.TimeSpan.TotalHours) * GanttSettings.DayWidth, width = (((current.AddDays(1) - ProjectStartDate).TotalHours / SelectedInterval.TimeSpan.TotalHours) * GanttSettings.DayWidth) - left; if (left + width > 0 && left < ChartWidth) HolidayBands.Add(new HolidayBand { Left = left, Width = width, BackgroundColor = current.DayOfWeek == DayOfWeek.Saturday ? Brushes.AliceBlue : Brushes.MistyRose }); } current = current.AddDays(1); }
+            if (!IsNumericMode) while (current <= end.Date.AddDays(1)) { if (current.DayOfWeek == DayOfWeek.Saturday || current.DayOfWeek == DayOfWeek.Sunday) { double left = ((current - ProjectStartDate).TotalHours / SelectedInterval.TimeSpan.TotalHours) * GanttSettings.DayWidth, width = (((current.AddDays(1) - ProjectStartDate).TotalHours / SelectedInterval.TimeSpan.TotalHours) * GanttSettings.DayWidth) - left; if (left + width > 0 && left < ChartWidth) HolidayBands.Add(new HolidayBand { Left = left, Width = width, BackgroundColor = current.DayOfWeek == DayOfWeek.Saturday ? Brushes.AliceBlue : Brushes.MistyRose }); } current = current.AddDays(1); }
             UpdateGroups(); UpdateDependencies(); UpdateHighlight(); UpdateProgressLine();
             foreach (var t in Tasks) t.RefreshDisplay(); foreach (var n in Notes) n.RefreshDisplay();
             OnPropertyChanged(nameof(ChartHeight)); OnPropertyChanged(nameof(ChartWidth)); OnPropertyChanged(nameof(TodayLeft));
@@ -283,6 +301,7 @@ namespace GanttChartTool
 
         private void UpdateProgressLine()
         {
+            if (IsNumericMode) { ProgressLinePath = ""; return; }
             if (Tasks.Count == 0) { ProgressLinePath = $"M {TodayLeft},0 L {TodayLeft},{ChartHeight}"; return; }
             string path = $"M {TodayLeft},0 "; DateTime cmpDate = IsHourlyMode ? DateTime.Now : DateTime.Today;
             foreach (var task in Tasks.OrderBy(t => t.RowIndex)) { double rowTop = task.RowTop, ptX = (task.Progress >= 100 || (task.MainBar.Start.HasValue && cmpDate >= task.MainBar.End)) ? task.MainBar.Left + task.MainBar.Width : (task.MainBar.Start.HasValue && cmpDate < task.MainBar.Start.Value && task.Progress <= 0) ? TodayLeft : task.MainBar.Left + task.ProgressWidth; if (Math.Abs(ptX - TodayLeft) > 0.1) { path += $"L {TodayLeft},{rowTop + 8} L {ptX},{rowTop + 20} L {TodayLeft},{rowTop + 32} "; } }
@@ -300,7 +319,7 @@ namespace GanttChartTool
 
         public void SaveToFile(string filePath) 
         { 
-            var data = new ProjectSaveData { Tasks = Tasks, Notes = Notes, ProjectStartDate = ProjectStartDate, DisplayDays = DisplayDays, IsProgressLineVisible = IsProgressLineVisible, IsWorkDayAdjustmentEnabled = IsWorkDayAdjustmentEnabled, IntervalTicks = SelectedInterval.TimeSpan.Ticks, IsSnapToDay = IsSnapToDay }; 
+            var data = new ProjectSaveData { Tasks = Tasks, Notes = Notes, ProjectStartDate = ProjectStartDate, DisplayDays = DisplayDays, IsProgressLineVisible = IsProgressLineVisible, IsWorkDayAdjustmentEnabled = IsWorkDayAdjustmentEnabled, IntervalTicks = SelectedInterval.TimeSpan.Ticks, IsSnapToDay = IsSnapToDay, IsNumericMode = IsNumericMode }; 
             File.WriteAllText(filePath, JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true })); 
             CurrentFilePath = filePath; 
             HasUnsavedChanges = false; 
@@ -315,7 +334,7 @@ namespace GanttChartTool
                 if (data != null) 
                 { 
                     IsInternalLoading = true; 
-                    ProjectStartDate = data.ProjectStartDate; DisplayDays = data.DisplayDays; IsProgressLineVisible = data.IsProgressLineVisible; IsWorkDayAdjustmentEnabled = data.IsWorkDayAdjustmentEnabled; IsSnapToDay = data.IsSnapToDay; 
+                    ProjectStartDate = data.ProjectStartDate; DisplayDays = data.DisplayDays; IsProgressLineVisible = data.IsProgressLineVisible; IsWorkDayAdjustmentEnabled = data.IsWorkDayAdjustmentEnabled; IsSnapToDay = data.IsSnapToDay; IsNumericMode = data.IsNumericMode; 
                     SelectedInterval = IntervalOptions.FirstOrDefault(x => x.TimeSpan.Ticks == data.IntervalTicks) ?? (data.IsHourlyMode ? IntervalOptions[0] : IntervalOptions[4]); 
                     
                     Tasks.Clear(); foreach (var t in data.Tasks) { t.SetReferences(UpdateAll, () => ProjectStartDate, () => SelectedInterval.TimeSpan); t.MigrateOldData(); Tasks.Add(t); } 

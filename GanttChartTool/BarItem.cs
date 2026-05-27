@@ -35,6 +35,20 @@ namespace GanttChartTool
         [JsonIgnore] public double Width => CalculateWidth(Start, End);
         [JsonIgnore] public double GhostLeft => CalculateX(OriginalStart);
         [JsonIgnore] public double GhostWidth => CalculateWidth(OriginalStart, OriginalEnd);
+
+        [JsonIgnore]
+        public double StartNumber
+        {
+            get => Start.HasValue && GetProjectStart != null && GetGridInterval != null ? (Start.Value - GetProjectStart()).TotalHours / GetGridInterval().TotalHours : 0;
+            set { if (GetProjectStart != null && GetGridInterval != null) Start = GetProjectStart().Add(TimeSpan.FromTicks((long)(GetGridInterval().Ticks * value))); }
+        }
+
+        [JsonIgnore]
+        public double EndNumber
+        {
+            get => End.HasValue && GetProjectStart != null && GetGridInterval != null ? (End.Value - GetProjectStart()).TotalHours / GetGridInterval().TotalHours : 0;
+            set { if (GetProjectStart != null && GetGridInterval != null) End = GetProjectStart().Add(TimeSpan.FromTicks((long)(GetGridInterval().Ticks * value))); }
+        }
         
         private double CalculateX(DateTime? dt) => (dt == null || GetProjectStart == null || GetGridInterval == null) ? 0 : ((dt.Value - GetProjectStart()).TotalHours / GetGridInterval().TotalHours) * GanttSettings.DayWidth;
         private double CalculateWidth(DateTime? s, DateTime? e) => (s == null || e == null || GetGridInterval == null) ? 0 : Math.Max(0, ((e.Value - s.Value).TotalHours / GetGridInterval().TotalHours) * GanttSettings.DayWidth);
@@ -45,6 +59,8 @@ namespace GanttChartTool
             OnPropertyChanged(nameof(Width)); 
             OnPropertyChanged(nameof(GhostLeft)); 
             OnPropertyChanged(nameof(GhostWidth)); 
+            OnPropertyChanged(nameof(StartNumber));
+            OnPropertyChanged(nameof(EndNumber));
             OnPropertyChanged(nameof(Visibility)); 
             OnPropertyChanged(nameof(GhostVisibility)); 
             OnPropertyChanged(nameof(Brush)); 

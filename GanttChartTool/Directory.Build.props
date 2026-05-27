@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <ApplicationIcon>AppIcon.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="AppIcon.ico" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
