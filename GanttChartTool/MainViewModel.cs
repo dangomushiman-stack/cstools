@@ -82,6 +82,7 @@ namespace GanttChartTool
         public long IntervalTicks { get; set; } = 0; 
         public bool IsSnapToDay { get; set; } = false;
         public bool IsNumericMode { get; set; } = false;
+        public bool IsDependencyFocusEnabled { get; set; } = true;
         
         // ★修正：過去のJSONファイルを読み込むための互換性プロパティとして復活
         public bool IsHourlyMode { get; set; } = false; 
@@ -148,7 +149,19 @@ namespace GanttChartTool
         public bool IsLinkMode { get => _isLinkMode; set { _isLinkMode = value; OnPropertyChanged(); if (!_isLinkMode) ClearSelection(); } }
         public bool IsProgressLineVisible { get => _isProgressLineVisible; set { _isProgressLineVisible = value; MarkDirty(); OnPropertyChanged(); } }
         public bool IsWorkDayAdjustmentEnabled { get => _isWorkDayAdjustmentEnabled; set { _isWorkDayAdjustmentEnabled = value; MarkDirty(); OnPropertyChanged(); } }
-        public double ChartHeight => Math.Max(400, Tasks.Count * GanttSettings.RowHeight + 80);
+        private bool _isDependencyFocusEnabled = true;
+        public bool IsDependencyFocusEnabled
+        {
+            get => _isDependencyFocusEnabled;
+            set
+            {
+                _isDependencyFocusEnabled = value;
+                MarkDirty();
+                OnPropertyChanged();
+                UpdateHighlight();
+            }
+        }
+        public double ChartHeight => Math.Max(400, Tasks.Count * GanttSettings.RowHeight);
         public double ChartWidth => DisplayDays * GanttSettings.DayWidth;
         private string _progressLinePath = "";
         public string ProgressLinePath { get => _progressLinePath; set { _progressLinePath = value; OnPropertyChanged(); } }
@@ -313,13 +326,26 @@ namespace GanttChartTool
             DependencyLines.Clear(); var converter = new BrushConverter();
             foreach (var target in Tasks.Where(x => !string.IsNullOrWhiteSpace(x.PredecessorId))) { foreach (var id in target.PredecessorId.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)) { var source = Tasks.FirstOrDefault(t => t.Id == id); if (source != null && source.EffectiveEnd.HasValue && target.MainBar.Start.HasValue) { double startX = source.SubBar.Visibility == Visibility.Visible ? source.SubBar.Left + source.SubBar.Width : source.MainBar.Left + source.MainBar.Width, startY = source.Top + (source.BarHeight / 2), endX = target.MainBar.Left, endY = target.Top + (target.BarHeight / 2); DependencyLines.Add(new DependencyLine { PathData = $"M {startX},{startY} L {startX + 10},{startY} L {startX + 10},{endY} L {endX},{endY}", LineBrush = (Brush)converter.ConvertFromString(source.LineColorName) ?? Brushes.DarkOrange }); } } }
         }
-        private void UpdateHighlight() { foreach (var t in Tasks) t.IsRelevant = (SelectedTask == null); if (SelectedTask == null) return; SelectedTask.IsRelevant = true; HighlightPredecessors(SelectedTask); HighlightSuccessors(SelectedTask); }
+        private void UpdateHighlight()
+        {
+            if (!IsDependencyFocusEnabled)
+            {
+                foreach (var t in Tasks) t.IsRelevant = true;
+                return;
+            }
+
+            foreach (var t in Tasks) t.IsRelevant = (SelectedTask == null);
+            if (SelectedTask == null) return;
+            SelectedTask.IsRelevant = true;
+            HighlightPredecessors(SelectedTask);
+            HighlightSuccessors(SelectedTask);
+        }
         private void HighlightPredecessors(TaskItem task) { if (string.IsNullOrWhiteSpace(task.PredecessorId)) return; foreach (var id in task.PredecessorId.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)) { var pre = Tasks.FirstOrDefault(t => t.Id == id); if (pre != null && !pre.IsRelevant) { pre.IsRelevant = true; HighlightPredecessors(pre); } } }
         private void HighlightSuccessors(TaskItem task) { var successors = Tasks.Where(t => !string.IsNullOrWhiteSpace(t.PredecessorId) && t.PredecessorId.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Contains(task.Id)); foreach (var suc in successors) { if (!suc.IsRelevant) { suc.IsRelevant = true; HighlightSuccessors(suc); } } }
 
         public void SaveToFile(string filePath) 
         { 
-            var data = new ProjectSaveData { Tasks = Tasks, Notes = Notes, ProjectStartDate = ProjectStartDate, DisplayDays = DisplayDays, IsProgressLineVisible = IsProgressLineVisible, IsWorkDayAdjustmentEnabled = IsWorkDayAdjustmentEnabled, IntervalTicks = SelectedInterval.TimeSpan.Ticks, IsSnapToDay = IsSnapToDay, IsNumericMode = IsNumericMode }; 
+            var data = new ProjectSaveData { Tasks = Tasks, Notes = Notes, ProjectStartDate = ProjectStartDate, DisplayDays = DisplayDays, IsProgressLineVisible = IsProgressLineVisible, IsWorkDayAdjustmentEnabled = IsWorkDayAdjustmentEnabled, IntervalTicks = SelectedInterval.TimeSpan.Ticks, IsSnapToDay = IsSnapToDay, IsNumericMode = IsNumericMode, IsDependencyFocusEnabled = IsDependencyFocusEnabled }; 
             File.WriteAllText(filePath, JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true })); 
             CurrentFilePath = filePath; 
             HasUnsavedChanges = false; 
@@ -334,7 +360,7 @@ namespace GanttChartTool
                 if (data != null) 
                 { 
                     IsInternalLoading = true; 
-                    ProjectStartDate = data.ProjectStartDate; DisplayDays = data.DisplayDays; IsProgressLineVisible = data.IsProgressLineVisible; IsWorkDayAdjustmentEnabled = data.IsWorkDayAdjustmentEnabled; IsSnapToDay = data.IsSnapToDay; IsNumericMode = data.IsNumericMode; 
+                    ProjectStartDate = data.ProjectStartDate; DisplayDays = data.DisplayDays; IsProgressLineVisible = data.IsProgressLineVisible; IsWorkDayAdjustmentEnabled = data.IsWorkDayAdjustmentEnabled; IsSnapToDay = data.IsSnapToDay; IsNumericMode = data.IsNumericMode; IsDependencyFocusEnabled = data.IsDependencyFocusEnabled; 
                     SelectedInterval = IntervalOptions.FirstOrDefault(x => x.TimeSpan.Ticks == data.IntervalTicks) ?? (data.IsHourlyMode ? IntervalOptions[0] : IntervalOptions[4]); 
                     
                     Tasks.Clear(); foreach (var t in data.Tasks) { t.SetReferences(UpdateAll, () => ProjectStartDate, () => SelectedInterval.TimeSpan); t.MigrateOldData(); Tasks.Add(t); } 

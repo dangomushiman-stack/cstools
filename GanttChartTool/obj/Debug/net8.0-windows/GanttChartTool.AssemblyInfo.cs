@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GanttChartTool")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9f3fa59be741d7de50d0d53d36d743510435abeb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ebd8fefcf8e73ef8254cc2d1bfae527674c5e806")]
 [assembly: System.Reflection.AssemblyProductAttribute("GanttChartTool")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GanttChartTool")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

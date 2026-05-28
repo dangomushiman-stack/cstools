@@ -118,8 +118,8 @@ namespace GanttChartTool
 
         [JsonIgnore] public double BarHeight => IsGroup ? 12 : 30;
 
-        [JsonIgnore] public double Top => 40 + (RowIndex * GanttSettings.RowHeight) + ((GanttSettings.RowHeight - BarHeight) / 2);
-        [JsonIgnore] public double RowTop => 40 + (RowIndex * GanttSettings.RowHeight);
+        [JsonIgnore] public double Top => (RowIndex * GanttSettings.RowHeight) + ((GanttSettings.RowHeight - BarHeight) / 2);
+        [JsonIgnore] public double RowTop => RowIndex * GanttSettings.RowHeight;
         [JsonIgnore] public double ProgressWidth => MainBar.Width * (Progress / 100.0);
 
         [JsonIgnore] public DateTime? EffectiveEnd => SubBar.Visibility == Visibility.Visible ? SubBar.End : MainBar.End;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
@@ -10,9 +10,11 @@ namespace GanttChartTool
 {
     public partial class MainWindow : Window
     {
-        private bool _isResizingLeft = false, _isResizingRight = false, _isDraggingNote = false, _isResizingNote = false, _isDraggingNoteTarget = false, _isSync = false;
+        private bool _isResizingLeft = false, _isResizingRight = false, _isDraggingNote = false, _isResizingNote = false, _isDraggingNoteTarget = false, _isSync = false, _isPanningChart = false;
         private Point _dragStartPos; private object? _dragTarget = null;
-        private double _origX, _origY, _origWidth, _origHeight;
+        private Point _panStartPos;
+        private FrameworkElement? _panCaptureElement = null;
+        private double _origX, _origY, _origWidth, _origHeight, _panStartHorizontalOffset, _panStartVerticalOffset;
         private DateTime _origTime, _origTargetTime; 
         private ScrollViewer? _dgScroll;
 
@@ -24,28 +26,72 @@ namespace GanttChartTool
             this.Closing += Window_Closing;
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e) { _dgScroll = GetVisualChild<ScrollViewer>(MainDataGrid); if (_dgScroll != null) _dgScroll.ScrollChanged += (s, ev) => { if (!_isSync) { _isSync = true; GanttScrollViewer.ScrollToVerticalOffset(ev.VerticalOffset); _isSync = false; } }; }
-        private void GanttScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e) { if (!_isSync && _dgScroll != null) { _isSync = true; _dgScroll.ScrollToVerticalOffset(e.VerticalOffset); _isSync = false; } }
+        private void Window_Loaded(object sender, RoutedEventArgs e) 
+        { 
+            _dgScroll = GetVisualChild<ScrollViewer>(MainDataGrid); 
+            if (_dgScroll != null) 
+            {
+                _dgScroll.ScrollChanged += (s, ev) => 
+                { 
+                    if (!_isSync && Math.Abs(GanttScrollViewer.VerticalOffset - ev.VerticalOffset) > 0.1) 
+                    { 
+                        _isSync = true; 
+                        GanttScrollViewer.ScrollToVerticalOffset(ev.VerticalOffset); 
+                        _isSync = false; 
+                    } 
+                }; 
+            }
+        }
+
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.S && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            {
+                Save_Click(sender, new RoutedEventArgs());
+                e.Handled = true;
+            }
+        }
+        private void GanttScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e) 
+        { 
+            // 日付ヘッダーは縦スクロールさせず、横スクロールだけ本文と同期する。
+            if (Math.Abs(GanttHeaderScrollViewer.HorizontalOffset - e.HorizontalOffset) > 0.1)
+                GanttHeaderScrollViewer.ScrollToHorizontalOffset(e.HorizontalOffset);
+
+            // 左側の表とは縦スクロールだけ同期する。
+            if (!_isSync && _dgScroll != null && Math.Abs(_dgScroll.VerticalOffset - e.VerticalOffset) > 0.1) 
+            { 
+                _isSync = true; 
+                _dgScroll.ScrollToVerticalOffset(e.VerticalOffset); 
+                _isSync = false; 
+            } 
+        }
+
+        // 未保存の変更がある場合、続行前に保存確認する
+        private bool ConfirmSaveIfNeeded(string message)
+        {
+            var vm = (MainViewModel)this.DataContext;
+            if (!vm.HasUnsavedChanges) return true;
+
+            var result = MessageBox.Show(
+                message,
+                "保存の確認",
+                MessageBoxButton.YesNoCancel,
+                MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                Save_Click(this, new RoutedEventArgs());
+                return !vm.HasUnsavedChanges;
+            }
+
+            return result == MessageBoxResult.No;
+        }
 
         // ★追加：ウィンドウを閉じる（終了する）ときの確認
         private void Window_Closing(object? sender, CancelEventArgs e)
         {
-            var vm = (MainViewModel)this.DataContext;
-            if (vm.HasUnsavedChanges)
-            {
-                var result = MessageBox.Show("変更が保存されていません。保存して終了しますか？\n（[いいえ] を選ぶと変更は破棄されます）", "保存の確認", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
-                if (result == MessageBoxResult.Yes)
-                {
-                    // 保存を試みる
-                    Save_Click(null!, new RoutedEventArgs());
-                    // もし名前を付けて保存ダイアログで「キャンセル」を押した場合、終了もキャンセルする
-                    if (vm.HasUnsavedChanges) e.Cancel = true; 
-                }
-                else if (result == MessageBoxResult.Cancel)
-                {
-                    e.Cancel = true; // 終了をキャンセル
-                }
-            }
+            if (!ConfirmSaveIfNeeded("変更が保存されていません。保存して終了しますか？\n（[いいえ] を選ぶと変更は破棄されます）"))
+                e.Cancel = true;
         }
 
         private void Bar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -94,7 +140,66 @@ namespace GanttChartTool
             {
                 Keyboard.ClearFocus();
                 ((MainViewModel)this.DataContext).ClearSelection();
+
+                _isPanningChart = true;
+                _panStartPos = e.GetPosition(this);
+                _panStartHorizontalOffset = GanttScrollViewer.HorizontalOffset;
+                _panStartVerticalOffset = GanttScrollViewer.VerticalOffset;
+
+                // ScrollViewer自身をCaptureすると、MouseMove/MouseUpが背景Gridへ戻らず、
+                // ドラッグ状態のまま固まったように見える場合があるため、
+                // 実際にイベントを受けている背景要素をCaptureする。
+                _panCaptureElement = sender as FrameworkElement;
+                _panCaptureElement?.CaptureMouse();
+                if (_panCaptureElement != null) _panCaptureElement.Cursor = Cursors.SizeAll;
+
+                e.Handled = true;
             }
+        }
+
+        private void ChartBackground_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_isPanningChart) return;
+
+            // マウスボタンが離れたのにMouseUpを取り逃がした場合の保険。
+            if (e.LeftButton != MouseButtonState.Pressed)
+            {
+                EndChartPan();
+                return;
+            }
+
+            var current = e.GetPosition(this);
+            double dx = current.X - _panStartPos.X;
+            double dy = current.Y - _panStartPos.Y;
+
+            double nextX = Math.Max(0, _panStartHorizontalOffset - dx);
+            double nextY = Math.Max(0, _panStartVerticalOffset - dy);
+
+            if (Math.Abs(GanttScrollViewer.HorizontalOffset - nextX) > 0.1)
+                GanttScrollViewer.ScrollToHorizontalOffset(nextX);
+            if (Math.Abs(GanttScrollViewer.VerticalOffset - nextY) > 0.1)
+                GanttScrollViewer.ScrollToVerticalOffset(nextY);
+
+            e.Handled = true;
+        }
+
+        private void ChartBackground_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (!_isPanningChart) return;
+
+            EndChartPan();
+            e.Handled = true;
+        }
+
+        private void EndChartPan()
+        {
+            _isPanningChart = false;
+            if (_panCaptureElement != null)
+            {
+                _panCaptureElement.Cursor = Cursors.Arrow;
+                if (_panCaptureElement.IsMouseCaptured) _panCaptureElement.ReleaseMouseCapture();
+            }
+            _panCaptureElement = null;
         }
 
         private void NoteTextBox_GotFocus(object sender, RoutedEventArgs e) { if (sender is TextBox tb && tb.DataContext is NoteItem note) ((MainViewModel)this.DataContext).SelectNote(note); }
@@ -186,29 +291,60 @@ namespace GanttChartTool
         private void Indent_Click(object sender, RoutedEventArgs e) { if (MainDataGrid.SelectedItem is TaskItem t) t.IndentLevel++; }
         private void Outdent_Click(object sender, RoutedEventArgs e) { if (MainDataGrid.SelectedItem is TaskItem t && t.IndentLevel > 0) t.IndentLevel--; }
 
-        private void Save_Click(object sender, RoutedEventArgs e) { var vm = (MainViewModel)this.DataContext; if (string.IsNullOrEmpty(vm.CurrentFilePath)) SaveAs_Click(sender, e); else { vm.SaveToFile(vm.CurrentFilePath); MessageBox.Show("保存しました。"); } }
-        private void SaveAs_Click(object sender, RoutedEventArgs e) { var vm = (MainViewModel)this.DataContext; var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "JSON|*.json", FileName = "tasks.json" }; if (dlg.ShowDialog() == true) { vm.SaveToFile(dlg.FileName); MessageBox.Show("保存しました。"); } }
+        private void NewProject_Click(object sender, RoutedEventArgs e)
+        {
+            if (!ConfirmSaveIfNeeded("現在のプロジェクトに変更があります。新規作成する前に保存しますか？\n（[いいえ] を選ぶと変更は破棄されます）")) return;
+
+            DataContext = new MainViewModel();
+        }
+
+        private void NewWindow_Click(object sender, RoutedEventArgs e)
+        {
+            var window = new MainWindow();
+            window.Show();
+        }
+
+        private void Save_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = (MainViewModel)this.DataContext;
+            if (string.IsNullOrEmpty(vm.CurrentFilePath))
+            {
+                SaveAs_Click(sender, e);
+                return;
+            }
+
+            vm.SaveToFile(vm.CurrentFilePath);
+        }
+
+        private void SaveAs_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = (MainViewModel)this.DataContext;
+            string fileName = string.IsNullOrEmpty(vm.CurrentFilePath)
+                ? "tasks.gntj"
+                : System.IO.Path.ChangeExtension(System.IO.Path.GetFileName(vm.CurrentFilePath), ".gntj");
+
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Filter = "Gantt Project (*.gntj)|*.gntj|JSON (*.json)|*.json|All files (*.*)|*.*",
+                DefaultExt = ".gntj",
+                AddExtension = true,
+                FileName = fileName
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                vm.SaveToFile(dlg.FileName);
+                MessageBox.Show("保存しました。");
+            }
+        }
         
         // ★変更：読み込み前に未保存の変更がないかチェック
         private void Load_Click(object sender, RoutedEventArgs e) 
         { 
-            var vm = (MainViewModel)this.DataContext; 
-            if (vm.HasUnsavedChanges)
-            {
-                var result = MessageBox.Show("現在のプロジェクトに変更があります。読み込む前に保存しますか？", "保存の確認", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
-                if (result == MessageBoxResult.Yes)
-                {
-                    Save_Click(sender, e);
-                    // 保存がキャンセルされた場合は読み込みも中止する
-                    if (vm.HasUnsavedChanges) return; 
-                }
-                else if (result == MessageBoxResult.Cancel)
-                {
-                    return; // 読み込みを中止
-                }
-            }
+            if (!ConfirmSaveIfNeeded("現在のプロジェクトに変更があります。読み込む前に保存しますか？")) return;
 
-            var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "JSON|*.json" }; 
+            var vm = (MainViewModel)this.DataContext;
+            var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Gantt Project (*.gntj)|*.gntj|JSON (*.json)|*.json|All files (*.*)|*.*", DefaultExt = ".gntj" }; 
             if (dlg.ShowDialog() == true) vm.LoadFromFile(dlg.FileName); 
         }
 
