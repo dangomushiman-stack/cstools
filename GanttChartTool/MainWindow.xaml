@@ -86,6 +86,7 @@
             <DataGrid.ContextMenu><ContextMenu><MenuItem Header="↑ 上へ移動" Click="MoveUp_Click"/><MenuItem Header="↓ 下へ移動" Click="MoveDown_Click"/><Separator/><MenuItem Header="上に行を追加" Click="InsertAbove_Click"/><MenuItem Header="下に行を追加" Click="InsertBelow_Click"/><Separator/><MenuItem Header="行を削除" Click="DeleteRow_Click" Foreground="Red"/></ContextMenu></DataGrid.ContextMenu>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" IsReadOnly="True" Width="30"/>
+                <DataGridCheckBoxColumn Header="HP" Binding="{Binding IsHoldPoint, UpdateSourceTrigger=PropertyChanged}" Width="35"/>
                 <DataGridTemplateColumn Header="タスク名" Width="140">
                     <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Name}" Margin="{Binding IndentMargin}" VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="FontWeight" Value="Normal"/><Style.Triggers><DataTrigger Binding="{Binding IsGroup}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate></DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="{Binding IndentMargin}"/></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
@@ -179,6 +180,23 @@
                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas Width="{Binding DataContext.ChartWidth, ElementName=RootWindow}" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}" IsHitTestVisible="False"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Canvas.Left" Value="{Binding Left}"/></Style></ItemsControl.ItemContainerStyle>
                     <ItemsControl.ItemTemplate><DataTemplate><Rectangle Width="1" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}" Fill="#DDDDDD"/></DataTemplate></ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <ItemsControl ItemsSource="{Binding Tasks}">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas Width="{Binding DataContext.ChartWidth, ElementName=RootWindow}" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}" IsHitTestVisible="False"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="ContentPresenter">
+                            <Setter Property="Canvas.Left" Value="{Binding HoldPointLeft}"/>
+                            <Setter Property="Canvas.Top" Value="0"/>
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Width="6" Height="{Binding DataContext.ChartHeight, ElementName=RootWindow}" Background="DarkOrange" Visibility="{Binding HoldPointVisibility}" Opacity="0.75" CornerRadius="2" IsHitTestVisible="False">
+                                <Border.Effect><DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="DarkOrange" Opacity="0.35"/></Border.Effect>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
                 <ItemsControl ItemsSource="{Binding DependencyLines}">

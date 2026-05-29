@@ -104,6 +104,19 @@ namespace GanttChartTool
         private string _lineColorName = "DarkOrange";
         public string LineColorName { get => _lineColorName; set { _lineColorName = value; OnPropertyChanged(); _onUpdate?.Invoke(); } }
 
+        private bool _isHoldPoint = false;
+        public bool IsHoldPoint
+        {
+            get => _isHoldPoint;
+            set
+            {
+                _isHoldPoint = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HoldPointVisibility));
+                _onUpdate?.Invoke();
+            }
+        }
+
         [JsonIgnore] public bool IsSelected { get => _isSelected; set { _isSelected = value; OnPropertyChanged(); MainBar.Refresh(); SubBar.Refresh(); } }
         private bool _isSelected;
         
@@ -122,6 +135,9 @@ namespace GanttChartTool
         [JsonIgnore] public double RowTop => RowIndex * GanttSettings.RowHeight;
         [JsonIgnore] public double ProgressWidth => MainBar.Width * (Progress / 100.0);
 
+        [JsonIgnore] public double HoldPointLeft => Math.Max(0, MainBar.Left - 3);
+        [JsonIgnore] public Visibility HoldPointVisibility => IsHoldPoint && MainBar.Start.HasValue ? Visibility.Visible : Visibility.Collapsed;
+
         [JsonIgnore] public DateTime? EffectiveEnd => SubBar.Visibility == Visibility.Visible ? SubBar.End : MainBar.End;
 
         public void RefreshDisplay() 
@@ -130,6 +146,8 @@ namespace GanttChartTool
             SubBar.Refresh();
             OnPropertyChanged(nameof(Top)); 
             OnPropertyChanged(nameof(RowTop));
+            OnPropertyChanged(nameof(HoldPointLeft));
+            OnPropertyChanged(nameof(HoldPointVisibility));
             OnPropertyChanged(nameof(WorkDays));
             OnPropertyChanged(nameof(Length));
             OnPropertyChanged(nameof(RemainingWorkDays));
