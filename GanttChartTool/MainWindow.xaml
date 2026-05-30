@@ -4,6 +4,15 @@
         Title="{Binding WindowTitle}" Height="650" Width="1300" Icon="AppIcon.ico"
         x:Name="RootWindow" Loaded="Window_Loaded" PreviewKeyDown="Window_PreviewKeyDown">
     
+
+    <Window.InputBindings>
+        <KeyBinding Key="S" Modifiers="Control" Command="ApplicationCommands.Save"/>
+    </Window.InputBindings>
+
+    <Window.CommandBindings>
+        <CommandBinding Command="ApplicationCommands.Save" Executed="SaveCommand_Executed"/>
+    </Window.CommandBindings>
+
     <Window.Resources>
         <Style x:Key="OrangeToggleStyle" TargetType="ToggleButton">
             <Setter Property="Background" Value="White"/>
@@ -62,7 +71,8 @@
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="5">
                 <TextBlock Text="表示単位:" VerticalAlignment="Center" Margin="0,0,5,0" FontSize="11" Foreground="Gray"/>
                 <ComboBox ItemsSource="{Binding IntervalOptions}" SelectedItem="{Binding SelectedInterval}" DisplayMemberPath="Name" Width="75"/>
-                <CheckBox Content="1日単位スナップ" IsChecked="{Binding IsSnapToDay}" VerticalAlignment="Center" Margin="10,0,0,0" FontSize="11"/>
+                <TextBlock Text="スナップ単位:" VerticalAlignment="Center" Margin="10,0,5,0" FontSize="11" Foreground="Gray"/>
+                <ComboBox ItemsSource="{Binding SnapIntervalOptions}" SelectedItem="{Binding SelectedSnapInterval}" DisplayMemberPath="Name" Width="110"/>
             </StackPanel>
             <Border Width="1" Background="#DDDDDD" Margin="5,8"/>
             <CheckBox Content="イナズマ線" IsChecked="{Binding IsProgressLineVisible}" VerticalAlignment="Center" Margin="5" FontSize="11"/>

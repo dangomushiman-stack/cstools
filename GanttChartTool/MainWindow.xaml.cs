@@ -45,11 +45,15 @@ namespace GanttChartTool
 
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.S && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
-            {
-                Save_Click(sender, new RoutedEventArgs());
-                e.Handled = true;
-            }
+            // Ctrl+S は Window.InputBindings / CommandBindings 側で処理します。
+            // PreviewKeyDown では処理しないことで、TextBox や DataGrid にフォーカスがある場合も
+            // WPF のコマンド経由で安定して保存できるようにします。
+        }
+
+        private void SaveCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            Save_Click(sender, new RoutedEventArgs());
+            e.Handled = true;
         }
         private void GanttScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e) 
         { 
@@ -124,7 +128,8 @@ namespace GanttChartTool
             {
                 double dx = e.GetPosition(null).X - _dragStartPos.X;
                 TimeSpan movedTime = TimeSpan.FromTicks((long)(vm.SelectedInterval.TimeSpan.Ticks * (dx / GanttSettings.DayWidth)));
-                TimeSpan snapInterval = vm.IsSnapToDay ? TimeSpan.FromDays(1) : vm.SelectedInterval.TimeSpan;
+                TimeSpan snapInterval = vm.SelectedSnapTimeSpan;
+                if (snapInterval.Ticks <= 0) snapInterval = vm.SelectedInterval.TimeSpan;
                 TimeSpan diff = TimeSpan.FromTicks((long)Math.Round((double)movedTime.Ticks / snapInterval.Ticks) * snapInterval.Ticks);
                 if (bar.IsDragging && !_isResizingLeft && !_isResizingRight) { bar.Start = bar.OriginalStart.Value.Add(diff); bar.End = bar.OriginalEnd.Value.Add(diff); }
                 else if (_isResizingLeft) { DateTime next = bar.OriginalStart.Value.Add(diff); if (next < bar.End.Value) bar.Start = next; }

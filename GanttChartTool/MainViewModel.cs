@@ -81,6 +81,7 @@ namespace GanttChartTool
         public bool IsWorkDayAdjustmentEnabled { get; set; } = true;
         public long IntervalTicks { get; set; } = 0; 
         public bool IsSnapToDay { get; set; } = false;
+        public long SnapIntervalTicks { get; set; } = 0;
         public bool IsNumericMode { get; set; } = false;
         public bool IsDependencyFocusEnabled { get; set; } = true;
         
@@ -99,7 +100,8 @@ namespace GanttChartTool
         public ObservableCollection<GridDayItem> GridDays { get; set; } = new();
         public ObservableCollection<HolidayBand> HolidayBands { get; set; } = new();
         public ObservableCollection<DependencyLine> DependencyLines { get; set; } = new();
-        public ObservableCollection<IntervalOption> IntervalOptions { get; } = new() { new IntervalOption { Name = "1時間", TimeSpan = TimeSpan.FromHours(1) }, new IntervalOption { Name = "3時間", TimeSpan = TimeSpan.FromHours(3) }, new IntervalOption { Name = "6時間", TimeSpan = TimeSpan.FromHours(6) }, new IntervalOption { Name = "半日", TimeSpan = TimeSpan.FromHours(12) }, new IntervalOption { Name = "1日", TimeSpan = TimeSpan.FromDays(1) }, new IntervalOption { Name = "2日", TimeSpan = TimeSpan.FromDays(2) }, new IntervalOption { Name = "3日", TimeSpan = TimeSpan.FromDays(3) }, new IntervalOption { Name = "1週間", TimeSpan = TimeSpan.FromDays(7) } };
+        public ObservableCollection<IntervalOption> IntervalOptions { get; } = new() { new IntervalOption { Name = "10分", TimeSpan = TimeSpan.FromMinutes(10) }, new IntervalOption { Name = "30分", TimeSpan = TimeSpan.FromMinutes(30) }, new IntervalOption { Name = "1時間", TimeSpan = TimeSpan.FromHours(1) }, new IntervalOption { Name = "3時間", TimeSpan = TimeSpan.FromHours(3) }, new IntervalOption { Name = "6時間", TimeSpan = TimeSpan.FromHours(6) }, new IntervalOption { Name = "半日", TimeSpan = TimeSpan.FromHours(12) }, new IntervalOption { Name = "1日", TimeSpan = TimeSpan.FromDays(1) }, new IntervalOption { Name = "2日", TimeSpan = TimeSpan.FromDays(2) }, new IntervalOption { Name = "3日", TimeSpan = TimeSpan.FromDays(3) }, new IntervalOption { Name = "1週間", TimeSpan = TimeSpan.FromDays(7) } };
+        public ObservableCollection<IntervalOption> SnapIntervalOptions { get; } = new() { new IntervalOption { Name = "表示単位と同じ", TimeSpan = TimeSpan.Zero }, new IntervalOption { Name = "10分", TimeSpan = TimeSpan.FromMinutes(10) }, new IntervalOption { Name = "30分", TimeSpan = TimeSpan.FromMinutes(30) }, new IntervalOption { Name = "1時間", TimeSpan = TimeSpan.FromHours(1) }, new IntervalOption { Name = "3時間", TimeSpan = TimeSpan.FromHours(3) }, new IntervalOption { Name = "6時間", TimeSpan = TimeSpan.FromHours(6) }, new IntervalOption { Name = "半日", TimeSpan = TimeSpan.FromHours(12) }, new IntervalOption { Name = "1日", TimeSpan = TimeSpan.FromDays(1) }, new IntervalOption { Name = "2日", TimeSpan = TimeSpan.FromDays(2) }, new IntervalOption { Name = "3日", TimeSpan = TimeSpan.FromDays(3) }, new IntervalOption { Name = "1週間", TimeSpan = TimeSpan.FromDays(7) } };
 
         public ObservableCollection<string> AvailableLineColors { get; } = new ObservableCollection<string> { "DarkOrange", "Crimson", "RoyalBlue", "SeaGreen", "DimGray" };
         public ObservableCollection<string> AvailableBarColors { get; } = new ObservableCollection<string> { "SteelBlue", "MediumSeaGreen", "Tomato", "MediumPurple", "DimGray", "Goldenrod", "Teal" };
@@ -115,7 +117,10 @@ namespace GanttChartTool
         public void MarkDirty() { if (!IsInternalLoading) HasUnsavedChanges = true; }
 
         private IntervalOption _selectedInterval;
-        public IntervalOption SelectedInterval { get => _selectedInterval; set { _selectedInterval = value; MarkDirty(); OnPropertyChanged(); OnPropertyChanged(nameof(IsHourlyMode)); UpdateAll(); } }
+        public IntervalOption SelectedInterval { get => _selectedInterval; set { _selectedInterval = value; MarkDirty(); OnPropertyChanged(); OnPropertyChanged(nameof(IsHourlyMode)); OnPropertyChanged(nameof(SelectedSnapTimeSpan)); UpdateAll(); } }
+        private IntervalOption _selectedSnapInterval;
+        public IntervalOption SelectedSnapInterval { get => _selectedSnapInterval; set { _selectedSnapInterval = value; MarkDirty(); OnPropertyChanged(); OnPropertyChanged(nameof(SelectedSnapTimeSpan)); } }
+        [JsonIgnore] public TimeSpan SelectedSnapTimeSpan => (SelectedSnapInterval == null || SelectedSnapInterval.TimeSpan == TimeSpan.Zero) ? SelectedInterval.TimeSpan : SelectedSnapInterval.TimeSpan;
         public bool IsHourlyMode => !IsNumericMode && SelectedInterval?.TimeSpan.TotalDays < 1;
         public bool IsDateMode => !IsNumericMode;
         public string AxisStartCaption => IsNumericMode ? "数値軸:" : "開始日:";
@@ -174,7 +179,8 @@ namespace GanttChartTool
         public MainViewModel() 
         { 
             IsInternalLoading = true;
-            _selectedInterval = IntervalOptions[4]; 
+            _selectedInterval = IntervalOptions.First(x => x.TimeSpan == TimeSpan.FromDays(1)); 
+            _selectedSnapInterval = SnapIntervalOptions[0]; 
 
             Tasks.CollectionChanged += (s, e) => {
                 MarkDirty();
@@ -345,7 +351,7 @@ namespace GanttChartTool
 
         public void SaveToFile(string filePath) 
         { 
-            var data = new ProjectSaveData { Tasks = Tasks, Notes = Notes, ProjectStartDate = ProjectStartDate, DisplayDays = DisplayDays, IsProgressLineVisible = IsProgressLineVisible, IsWorkDayAdjustmentEnabled = IsWorkDayAdjustmentEnabled, IntervalTicks = SelectedInterval.TimeSpan.Ticks, IsSnapToDay = IsSnapToDay, IsNumericMode = IsNumericMode, IsDependencyFocusEnabled = IsDependencyFocusEnabled }; 
+            var data = new ProjectSaveData { Tasks = Tasks, Notes = Notes, ProjectStartDate = ProjectStartDate, DisplayDays = DisplayDays, IsProgressLineVisible = IsProgressLineVisible, IsWorkDayAdjustmentEnabled = IsWorkDayAdjustmentEnabled, IntervalTicks = SelectedInterval.TimeSpan.Ticks, IsSnapToDay = IsSnapToDay, SnapIntervalTicks = SelectedSnapInterval.TimeSpan.Ticks, IsNumericMode = IsNumericMode, IsDependencyFocusEnabled = IsDependencyFocusEnabled }; 
             File.WriteAllText(filePath, JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true })); 
             CurrentFilePath = filePath; 
             HasUnsavedChanges = false; 
@@ -361,7 +367,8 @@ namespace GanttChartTool
                 { 
                     IsInternalLoading = true; 
                     ProjectStartDate = data.ProjectStartDate; DisplayDays = data.DisplayDays; IsProgressLineVisible = data.IsProgressLineVisible; IsWorkDayAdjustmentEnabled = data.IsWorkDayAdjustmentEnabled; IsSnapToDay = data.IsSnapToDay; IsNumericMode = data.IsNumericMode; IsDependencyFocusEnabled = data.IsDependencyFocusEnabled; 
-                    SelectedInterval = IntervalOptions.FirstOrDefault(x => x.TimeSpan.Ticks == data.IntervalTicks) ?? (data.IsHourlyMode ? IntervalOptions[0] : IntervalOptions[4]); 
+                    SelectedInterval = IntervalOptions.FirstOrDefault(x => x.TimeSpan.Ticks == data.IntervalTicks) ?? (data.IsHourlyMode ? IntervalOptions.First(x => x.TimeSpan == TimeSpan.FromHours(1)) : IntervalOptions.First(x => x.TimeSpan == TimeSpan.FromDays(1))); 
+                    SelectedSnapInterval = data.SnapIntervalTicks != 0 ? (SnapIntervalOptions.FirstOrDefault(x => x.TimeSpan.Ticks == data.SnapIntervalTicks) ?? SnapIntervalOptions[0]) : (data.IsSnapToDay ? SnapIntervalOptions.First(x => x.TimeSpan == TimeSpan.FromDays(1)) : SnapIntervalOptions[0]);
                     
                     Tasks.Clear(); foreach (var t in data.Tasks) { t.SetReferences(UpdateAll, () => ProjectStartDate, () => SelectedInterval.TimeSpan); t.MigrateOldData(); Tasks.Add(t); } 
                     Notes.Clear(); 
